@@ -54,6 +54,7 @@ export interface RecognitionResult {
 export interface ReviewQueueItem {
   id: string
   content: string
+  correct_answer: string
   subject: string | null
   question_type: string | null
   image_url: string | null

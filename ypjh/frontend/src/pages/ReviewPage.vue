@@ -79,7 +79,7 @@ async function onScore(score: number) {
           <!-- 答案（点击显示）-->
           <div v-if="showAnswer" class="mt-4 pt-4 border-t border-dashed border-gray-200">
             <p class="text-xs text-gray-400 mb-1">正确答案</p>
-            <p class="text-green-700 font-medium">{{ current.content }}</p>
+            <p class="text-green-700 font-medium">{{ current.correct_answer }}</p>
           </div>
         </div>
 

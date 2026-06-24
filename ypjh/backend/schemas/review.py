@@ -8,6 +8,7 @@ class ReviewQueueItemOut(BaseModel):
 
     id: str
     content: str
+    correct_answer: str
     subject: str | None
     question_type: str | None
     image_url: str | None

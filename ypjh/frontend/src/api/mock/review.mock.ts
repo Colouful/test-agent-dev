@@ -7,6 +7,7 @@ export const mockReview = {
       data: {
         items: [
           { id: 'q-1', content: '已知 $\\sin\\theta = \\dfrac{3}{5}$，求 $\\cos\\theta$。',
+            correct_answer: '$\\cos\\theta = \\pm\\dfrac{4}{5}$',
             subject: '数学', question_type: 'fill',
             image_url: null, ease_factor: 2.5, interval_days: 1, review_count: 0 },
         ],
