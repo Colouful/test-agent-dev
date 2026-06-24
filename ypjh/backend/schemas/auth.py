@@ -24,3 +24,8 @@ class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
+
+class UserResponse(BaseModel):
+    id: str
+    email: str

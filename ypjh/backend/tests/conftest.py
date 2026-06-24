@@ -1,13 +1,8 @@
-import sys
-from pathlib import Path
 from typing import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-# Ensure the /workshop/ypjh directory is on sys.path so "backend.*" imports work
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from backend.core.database import get_session
 from backend.main import app
