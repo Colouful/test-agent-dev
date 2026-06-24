@@ -1,7 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.database import get_session
 from backend.core.security import get_current_user
 from backend.models.user import User
 from backend.schemas.common import ApiResponse
@@ -20,7 +18,6 @@ async def recognize_question(
     request: Request,
     image: UploadFile,
     current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
 ) -> ApiResponse[RecognitionResultOut]:
     # R17: 20MB 上限，在读取内容前检查 Content-Length
     content_length = request.headers.get("content-length")
