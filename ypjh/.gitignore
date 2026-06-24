@@ -4,3 +4,6 @@ __pycache__/
 test-proj/
 .gstack/
 shopping-cart/
+.env
+.env.local
+frontend/.env.development.local
