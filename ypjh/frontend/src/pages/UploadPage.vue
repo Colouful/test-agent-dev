@@ -3,7 +3,6 @@
 import { ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuestions } from '@/composables/useQuestions'
-import type { RecognitionResult } from '@/types'
 
 const router = useRouter()
 const toast = inject<{ show: (t: string, type?: 'success'|'error'|'info') => void }>('toast')

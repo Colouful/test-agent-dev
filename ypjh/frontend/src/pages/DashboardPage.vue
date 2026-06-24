@@ -1,12 +1,11 @@
 <!-- frontend/src/pages/DashboardPage.vue -->
 <script setup lang="ts">
-import { onMounted, inject } from 'vue'
+import { onMounted } from 'vue'
 import { useReview } from '@/composables/useReview'
 import { useAuth } from '@/composables/useAuth'
 
 const { store: reviewStore, fetchStats } = useReview()
 const { logout } = useAuth()
-const toast = inject<{ show: (t: string, type?: 'success'|'error'|'info') => void }>('toast')
 
 onMounted(fetchStats)
 

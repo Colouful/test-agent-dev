@@ -6,12 +6,18 @@ import { apiClient } from '@/api/client'
 export function useReview() {
   const store = useReviewStore()
   const submitting = ref(false)
+  const loading = ref(false)
 
   async function fetchQueue() {
-    const resp = IS_MOCK
-      ? await mockReview.queue()
-      : (await apiClient.get('/v1/review/queue')).data
-    store.queue = resp.data.items
+    loading.value = true
+    try {
+      const resp = IS_MOCK
+        ? await mockReview.queue()
+        : (await apiClient.get('/v1/review/queue')).data
+      store.queue = resp.data.items
+    } finally {
+      loading.value = false
+    }
   }
 
   async function fetchStats() {
@@ -33,5 +39,5 @@ export function useReview() {
     }
   }
 
-  return { store, submitting, fetchQueue, fetchStats, submitScore }
+  return { store, submitting, loading, fetchQueue, fetchStats, submitScore }
 }

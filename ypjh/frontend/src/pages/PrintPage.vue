@@ -17,7 +17,7 @@ onMounted(() => fetchList(100, 0))
 function toggleSelect(id: string) {
   selected.value.has(id) ? selected.value.delete(id) : selected.value.add(id)
 }
-const allSelected = computed(() => store.items.every(q => selected.value.has(q.id)))
+const allSelected = computed(() => store.items.length > 0 && store.items.every(q => selected.value.has(q.id)))
 function toggleAll() {
   allSelected.value
     ? (selected.value = new Set())

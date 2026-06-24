@@ -5,12 +5,12 @@ import { useAuth } from '@/composables/useAuth'
 
 const email = ref('')
 const password = ref('')
-const confirm = ref('')
+const confirmPassword = ref('')
 const validationError = ref('')
 const { loading, error, register } = useAuth()
 
 function submit() {
-  if (password.value !== confirm.value) {
+  if (password.value !== confirmPassword.value) {
     validationError.value = '两次密码不一致'
     return
   }
@@ -42,7 +42,7 @@ function submit() {
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
-          <input v-model="confirm" type="password" required placeholder="再次输入密码"
+          <input v-model="confirmPassword" type="password" required placeholder="再次输入密码"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
                    focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
         </div>
