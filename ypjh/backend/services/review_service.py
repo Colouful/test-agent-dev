@@ -17,6 +17,7 @@ from backend.schemas.review import (
 
 _qrepo = QuestionRepository()
 _rrepo = ReviewRepository()
+_PRESIGN_EXPIRES = 3600
 
 
 class ReviewService:
@@ -25,13 +26,14 @@ class ReviewService:
         self, session: AsyncSession, user_id: str, limit: int = 20
     ) -> ReviewQueueOut:
         questions = await _rrepo.get_due_questions(session, user_id, limit)
+        true_total = await _rrepo.get_due_count(session, user_id)
         items = []
         for q in questions:
             image_url = None
             expires_at = None
             if q.image_key:
-                image_url = generate_presigned_url(q.image_key, 3600)
-                expires_at = datetime.now(timezone.utc) + timedelta(seconds=3600)
+                image_url = generate_presigned_url(q.image_key, _PRESIGN_EXPIRES)
+                expires_at = datetime.now(timezone.utc) + timedelta(seconds=_PRESIGN_EXPIRES)
             items.append(ReviewQueueItemOut(
                 id=q.id,
                 content=q.content,
@@ -43,7 +45,7 @@ class ReviewService:
                 interval_days=q.interval_days,
                 review_count=q.review_count,
             ))
-        return ReviewQueueOut(items=items, total=len(items))
+        return ReviewQueueOut(items=items, total=true_total)
 
     async def submit_score(
         self,
@@ -69,7 +71,7 @@ class ReviewService:
         q.interval_days = new_interval
         q.review_count = new_count
         q.next_review_at = next_review_at
-        await session.flush()
+        q.last_reviewed_at = datetime.now(timezone.utc)
 
         # 记录复习日志
         await _rrepo.create_log(

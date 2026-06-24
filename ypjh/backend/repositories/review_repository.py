@@ -54,18 +54,23 @@ class ReviewRepository:
         await session.flush()
         return log
 
-    async def get_stats(
+    async def get_due_count(
         self, session: AsyncSession, user_id: str
-    ) -> dict[str, int]:
+    ) -> int:
         now = datetime.now(timezone.utc)
-        # 待复习数量
-        due_stmt = select(func.count()).select_from(Question).where(
+        stmt = select(func.count()).select_from(Question).where(
             Question.user_id == user_id,
             Question.deleted_at.is_(None),
             Question.next_review_at <= now,
         )
-        due_count: int = (await session.execute(due_stmt)).scalar_one()
+        return (await session.execute(stmt)).scalar_one()
 
+    async def get_stats(
+        self, session: AsyncSession, user_id: str
+    ) -> dict[str, int]:
+        due_count = await self.get_due_count(session, user_id)
+
+        now = datetime.now(timezone.utc)
         # 今日已复习
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         reviewed_stmt = select(func.count()).select_from(ReviewLog).where(

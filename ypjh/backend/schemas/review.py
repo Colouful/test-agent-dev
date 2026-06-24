@@ -1,9 +1,11 @@
 from __future__ import annotations
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ReviewQueueItemOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     content: str
     subject: str | None
@@ -21,10 +23,12 @@ class ReviewQueueOut(BaseModel):
 
 
 class ScoreRequest(BaseModel):
-    score: int = Field(..., ge=1, le=5)
+    score: int = Field(..., ge=0, le=5)
 
 
 class ScoreOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     question_id: str
     score: int
     new_ease_factor: float
@@ -34,5 +38,7 @@ class ScoreOut(BaseModel):
 
 
 class ReviewStatsOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     due_count: int
     reviewed_today: int
