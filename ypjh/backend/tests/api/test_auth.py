@@ -20,7 +20,7 @@ async def test_register_duplicate_returns_409(client: AsyncClient) -> None:
     await client.post("/api/v1/auth/register", json=payload)
     resp = await client.post("/api/v1/auth/register", json=payload)
     assert resp.status_code == 409
-    assert resp.json()["detail"]["code"] == "DUPLICATE_EMAIL"
+    assert resp.json()["error"]["code"] == "DUPLICATE_EMAIL"
 
 
 @pytest.mark.asyncio
@@ -48,7 +48,7 @@ async def test_login_wrong_password(client: AsyncClient) -> None:
         json={"email": "loginbad@example.com", "password": "wrongpass"},
     )
     assert resp.status_code == 401
-    assert resp.json()["detail"]["code"] == "INVALID_CREDENTIALS"
+    assert resp.json()["error"]["code"] == "INVALID_CREDENTIALS"
 
 
 @pytest.mark.asyncio
