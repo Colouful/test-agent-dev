@@ -44,6 +44,12 @@ MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "content": "",
         "correct_answer": "",
     },
+    "non_question": {
+        "content": "",
+        "correct_answer": "",
+        "confidence": 0.0,
+        "is_question": False,
+    },
 }
 
 
@@ -145,3 +151,67 @@ class RecognitionService:
         if MOCK_BEDROCK:
             return dict(MOCK_RESPONSES.get(self.mock_scenario, MOCK_RESPONSES["clear"]))
         raise NotImplementedError("真实 Bedrock 调用未实现，设置 MOCK_BEDROCK=true 使用 mock")
+
+    def recognize_upload(
+        self,
+        image_data: bytes,
+        user_id: str,
+        original_filename: str,
+    ) -> "RecognitionResultOut":
+        """生产入口：校验→EXIF修正→S3上传→识别→返回 Schema。"""
+        from backend.schemas.recognition import QuestionCandidateOut, RecognitionResultOut
+        from backend.core.image_utils import validate_image_bytes, fix_exif_orientation
+        from backend.core.s3_client import upload_image
+
+        # R16: Magic Bytes 校验
+        try:
+            ext = validate_image_bytes(image_data)
+        except ValueError:
+            return RecognitionResultOut(
+                status="error",
+                error_code="INVALID_FILE_TYPE",
+                error_hint="请上传 JPEG、PNG 或 HEIC 格式的图片",
+            )
+
+        # REQ-27: EXIF 方向修正
+        image_data = fix_exif_orientation(image_data)
+
+        # R18/R20: S3 上传（UUID key）
+        try:
+            key = upload_image(image_data, user_id, ext)
+        except Exception:
+            return RecognitionResultOut(
+                status="error",
+                error_code="OCR_FAILED",
+                error_hint="图片上传失败，请重试",
+            )
+
+        # 调用识别
+        inner = self.recognize(image_data, user_id=user_id, image_key=key)
+
+        # REQ-28: 非题目图片
+        if self.mock_scenario == "non_question":
+            return RecognitionResultOut(
+                status="error",
+                error_code="OCR_FAILED",
+                error_hint="未识别到题目内容，请重新拍摄题目图片",
+            )
+
+        candidate_out = None
+        if inner.candidate:
+            candidate_out = QuestionCandidateOut(
+                content=inner.candidate.content,
+                correct_answer=inner.candidate.correct_answer,
+                wrong_answer=getattr(inner.candidate, "wrong_answer", None),
+                confidence=inner.candidate.confidence,
+                subject=getattr(inner.candidate, "subject", None),
+                question_type=getattr(inner.candidate, "question_type", None),
+                image_key=key,
+            )
+
+        return RecognitionResultOut(
+            status=inner.status,  # type: ignore[arg-type]
+            candidate=candidate_out,
+            error_hint=inner.error_hint,
+            error_code="OCR_FAILED" if inner.status == "error" else None,
+        )
