@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, cast
 
 # 将 mcp/ 工具加入路径（开发阶段权宜之计；生产环境应安装为 Python 包）
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "mcp"))
@@ -202,15 +202,15 @@ class RecognitionService:
             candidate_out = QuestionCandidateOut(
                 content=inner.candidate.content,
                 correct_answer=inner.candidate.correct_answer,
-                wrong_answer=getattr(inner.candidate, "wrong_answer", None),
+                wrong_answer=inner.candidate.wrong_answer,
                 confidence=inner.candidate.confidence,
-                subject=getattr(inner.candidate, "subject", None),
-                question_type=getattr(inner.candidate, "question_type", None),
+                subject=inner.candidate.subject,
+                question_type=inner.candidate.question_type,
                 image_key=key,
             )
 
         return RecognitionResultOut(
-            status=inner.status,  # type: ignore[arg-type]
+            status=cast(Literal["high_confidence", "pending_review", "error"], inner.status),
             candidate=candidate_out,
             error_hint=inner.error_hint,
             error_code="OCR_FAILED" if inner.status == "error" else None,

@@ -12,6 +12,9 @@ def test_recognize_upload_returns_schema():
     result = svc.recognize_upload(b"\xff\xd8\xff" + b"\x00" * 100, "u1", "test.jpg")
     assert isinstance(result, RecognitionResultOut)
     assert result.status in ("high_confidence", "pending_review", "error")
+    if result.candidate:
+        assert result.candidate.image_key is not None
+        assert result.candidate.image_key.startswith("u1/original/")
 
 
 def test_invalid_file_type_returns_error():
