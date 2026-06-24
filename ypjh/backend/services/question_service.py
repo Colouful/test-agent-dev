@@ -78,6 +78,12 @@ class QuestionService:
     async def create(
         self, session: AsyncSession, user_id: str, data: QuestionCreate
     ) -> QuestionOut:
+        # Validate image_key belongs to this user (prevent cross-user S3 path injection)
+        if data.image_key and not data.image_key.startswith(f"{user_id}/"):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"code": "INVALID_IMAGE_KEY", "message": "image_key 路径不合法"},
+            )
         q = await _repo.create(session, user_id, data)
         await session.commit()
         return _to_out(q)
