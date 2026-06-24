@@ -29,11 +29,12 @@ async def print_preview(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> HTMLResponse:
+    # Deduplicate IDs while preserving order
+    unique_ids = list(dict.fromkeys(body.question_ids))
+    fetched = await _repo.get_by_ids(session, unique_ids, current_user.id)
+
     questions = []
-    for qid in body.question_ids:
-        q = await _repo.get_by_id(session, qid, current_user.id)
-        if q is None:
-            continue  # R1: 跨用户题目静默跳过
+    for q in fetched:
         image_url = None
         if q.image_key and body.show_image:
             image_url = generate_presigned_url(q.image_key, 3600)  # R23

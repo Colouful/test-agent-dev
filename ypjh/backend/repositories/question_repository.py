@@ -74,6 +74,24 @@ class QuestionRepository:
         await session.flush()
         return question
 
+    async def get_by_ids(
+        self, session: AsyncSession, question_ids: list[str], user_id: str
+    ) -> list[Question]:
+        if not question_ids:
+            return []
+        stmt = (
+            select(Question)
+            .where(
+                Question.id.in_(question_ids),
+                Question.user_id == user_id,  # R1
+                Question.deleted_at.is_(None),  # R21
+            )
+        )
+        result = await session.execute(stmt)
+        # Preserve input order
+        by_id = {q.id: q for q in result.scalars().all()}
+        return [by_id[qid] for qid in question_ids if qid in by_id]
+
     async def soft_delete(
         self, session: AsyncSession, question: Question
     ) -> None:
