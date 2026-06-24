@@ -11,7 +11,7 @@ class Question(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[str] = mapped_column(index=True)
-    subject: Mapped[str] = mapped_column(default=None)
+    subject: Mapped[str | None] = mapped_column(default=None)
     question_type: Mapped[str | None] = mapped_column(default=None)
     content: Mapped[str]
     wrong_answer: Mapped[str]
@@ -21,8 +21,8 @@ class Question(Base):
     confidence_score: Mapped[float] = mapped_column(default=0.0)
     image_key: Mapped[str | None] = mapped_column(default=None)
     original_filename: Mapped[str | None] = mapped_column(default=None)
-    pending_review: Mapped[str] = mapped_column(default=None)
-    status: Mapped[str] = mapped_column(default="single")
+    pending_review: Mapped[str | None] = mapped_column(default=None)
+    status: Mapped[str] = mapped_column(default="pending_review")
     ease_factor: Mapped[float] = mapped_column(default=2.5)
     review_count: Mapped[int] = mapped_column(default=0)
     interval_days: Mapped[int] = mapped_column(default=1)
@@ -32,4 +32,4 @@ class Question(Base):
     updated_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), onupdate=func.now()
     )
-    deleted_at: Mapped[str | None] = mapped_column(default=None)
+    deleted_at: Mapped[datetime | None] = mapped_column(default=None)
