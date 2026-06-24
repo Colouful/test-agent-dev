@@ -9,19 +9,17 @@ from backend.models.base import Base
 class Question(Base):
     __tablename__ = "questions"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    id: Mapped[str] = mapped_column(primary_key=True)
     user_id: Mapped[str] = mapped_column(index=True)
     subject: Mapped[str | None] = mapped_column(default=None)
     question_type: Mapped[str | None] = mapped_column(default=None)
     content: Mapped[str]
-    wrong_answer: Mapped[str]
-    correct_answer: Mapped[str | None] = mapped_column(default=None)
-    analysis: Mapped[str]
-    difficulty: Mapped[int] = mapped_column(default=3)
-    confidence_score: Mapped[float] = mapped_column(default=0.0)
+    correct_answer: Mapped[str]
+    wrong_answer: Mapped[str | None] = mapped_column(default=None)
+    note: Mapped[str | None] = mapped_column(default=None)
+    confidence: Mapped[float] = mapped_column(default=0.0)
     image_key: Mapped[str | None] = mapped_column(default=None)
     original_filename: Mapped[str | None] = mapped_column(default=None)
-    pending_review: Mapped[str | None] = mapped_column(default=None)
     status: Mapped[str] = mapped_column(default="pending_review")
     ease_factor: Mapped[float] = mapped_column(default=2.5)
     review_count: Mapped[int] = mapped_column(default=0)
