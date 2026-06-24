@@ -1,0 +1,3 @@
+{"ts":"2026-06-24T03:48:06.725Z","cmd":"status","args":"","origin":"about:blank","durationMs":7,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-06-24T03:49:10.599Z","cmd":"goto","args":"https://example.com","origin":"https://example.com/","durationMs":136,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-06-24T03:49:10.886Z","cmd":"screenshot","args":"/tmp/test.png","origin":"https://example.com/","durationMs":219,"status":"ok","hasCookies":false,"mode":"launched"}

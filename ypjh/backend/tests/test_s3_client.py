@@ -1,5 +1,4 @@
 import os
-import pytest
 
 os.environ["MOCK_BEDROCK"] = "true"
 

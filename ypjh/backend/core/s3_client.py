@@ -3,8 +3,6 @@ from __future__ import annotations
 import os
 import uuid
 
-from backend.core.config import settings
-
 MOCK_S3: bool = os.getenv("MOCK_BEDROCK", "true").lower() == "true"
 
 

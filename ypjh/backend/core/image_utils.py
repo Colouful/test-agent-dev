@@ -25,10 +25,10 @@ def validate_image_bytes(data: bytes) -> str:
 def fix_exif_orientation(data: bytes) -> bytes:
     """按 EXIF Orientation 物理旋转图片（REQ-27）。失败降级返回原字节。"""
     try:
-        from PIL import Image, ImageOps  # type: ignore[import-untyped]
+        from PIL import Image, ImageOps
 
         img = Image.open(io.BytesIO(data))
-        img = ImageOps.exif_transpose(img)
+        img = ImageOps.exif_transpose(img)  # type: ignore[assignment]
         buf = io.BytesIO()
         fmt = img.format or "JPEG"
         img.save(buf, format=fmt)
