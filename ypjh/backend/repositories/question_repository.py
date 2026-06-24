@@ -31,8 +31,7 @@ class QuestionRepository:
             review_count=0,
         )
         session.add(q)
-        await session.commit()
-        await session.refresh(q)
+        await session.flush()
         return q
 
     async def get_by_id(
@@ -72,12 +71,11 @@ class QuestionRepository:
         for field, value in data.model_dump(exclude_none=True).items():
             setattr(question, field, value)
         question.updated_at = datetime.now(timezone.utc)
-        await session.commit()
-        await session.refresh(question)
+        await session.flush()
         return question
 
     async def soft_delete(
         self, session: AsyncSession, question: Question
     ) -> None:
         question.deleted_at = datetime.now(timezone.utc)
-        await session.commit()
+        await session.flush()

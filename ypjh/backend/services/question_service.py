@@ -79,6 +79,7 @@ class QuestionService:
         self, session: AsyncSession, user_id: str, data: QuestionCreate
     ) -> QuestionOut:
         q = await _repo.create(session, user_id, data)
+        await session.commit()
         return _to_out(q)
 
     async def update(
@@ -95,6 +96,7 @@ class QuestionService:
                 detail={"code": "NOT_FOUND", "message": "题目不存在"},
             )
         updated = await _repo.update(session, q, data)
+        await session.commit()
         return _to_out(updated)
 
     async def delete(
@@ -107,3 +109,4 @@ class QuestionService:
                 detail={"code": "NOT_FOUND", "message": "题目不存在"},
             )
         await _repo.soft_delete(session, q)
+        await session.commit()
