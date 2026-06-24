@@ -12,7 +12,7 @@ class QuestionCandidateOut(BaseModel):
     confidence: float
     subject: str | None = None
     question_type: str | None = None
-    image_key: str | None = None
+    image_url: str | None = None  # R23: presigned URL, never raw S3 key
 
 
 class RecognitionResultOut(BaseModel):

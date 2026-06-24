@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 # 将 mcp/ 工具加入路径（开发阶段权宜之计；生产环境应安装为 Python 包）
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "mcp"))
+_MCP_PATH = str(Path(__file__).parent.parent.parent / "mcp")
+if _MCP_PATH not in sys.path:
+    sys.path.insert(0, _MCP_PATH)
 from check_question_schema import (
     CONFIDENCE_THRESHOLD,
     QuestionCandidate,
@@ -82,7 +84,7 @@ class RecognitionService:
         self,
         image_bytes: bytes,
         user_id: str,
-        image_key: str = "test-key",
+        image_key: str | None = None,
     ) -> RecognitionResult:
         """
         主入口：上传图片 → 调用 Bedrock → 校验 → 决策状态。
@@ -90,20 +92,30 @@ class RecognitionService:
         user_id 为当前用户 ID，用于 R1 隔离（传给下游 QuestionService）。
         返回 RecognitionResult，调用方根据 status 决定是否展示确认界面。
         """
-        # Step 1: 上传 S3 — 失败时提前返回，不继续调 Bedrock（避免无 image_key 入库）
-        try:
-            key = self._upload_to_s3(image_bytes) or image_key
-        except Exception as e:
-            return RecognitionResult(
-                status="error",
-                error_hint=f"图片上传失败，请重试：{e}",
-            )
+        # Step 1: 上传 S3（仅当调用方未提供 image_key 时；recognize_upload 已上传则跳过）
+        if image_key is None:
+            try:
+                image_key = self._upload_to_s3(image_bytes)
+            except Exception as e:
+                return RecognitionResult(
+                    status="error",
+                    error_hint=f"图片上传失败，请重试：{e}",
+                )
+        key = image_key
 
         # Step 2: 调用 Bedrock
         try:
             raw = self._call_bedrock(key)
         except Exception as e:
             return RecognitionResult(status="error", error_hint=f"识别服务暂时不可用：{e}")
+
+        # REQ-28: 非题目图片（Bedrock 明确返回 is_question=False）
+        if raw.get("is_question") is False:
+            return RecognitionResult(
+                status="error",
+                error_hint="未识别到题目内容，请重新拍摄题目图片",
+                image_key=key,
+            )
 
         # Step 3: R2 — confidence 缺失按 0 处理（不得默认 1.0）
         if "confidence" not in raw:
@@ -150,7 +162,12 @@ class RecognitionService:
         """调用 Bedrock 视觉模型，返回原始 dict。"""
         if MOCK_BEDROCK:
             return dict(MOCK_RESPONSES.get(self.mock_scenario, MOCK_RESPONSES["clear"]))
-        raise NotImplementedError("真实 Bedrock 调用未实现，设置 MOCK_BEDROCK=true 使用 mock")
+        # R24: prompt 必须从文件加载，不得硬编码
+        from backend.core.image_utils import PROMPT_PATH
+        raise NotImplementedError(
+            f"真实 Bedrock 调用未实现，设置 MOCK_BEDROCK=true 使用 mock。"
+            f"实现时需从 {PROMPT_PATH} 加载系统 Prompt（R24）。"
+        )
 
     def recognize_upload(
         self,
@@ -161,7 +178,7 @@ class RecognitionService:
         """生产入口：校验→EXIF修正→S3上传→识别→返回 Schema。"""
         from backend.schemas.recognition import QuestionCandidateOut, RecognitionResultOut
         from backend.core.image_utils import validate_image_bytes, fix_exif_orientation
-        from backend.core.s3_client import upload_image
+        from backend.core.s3_client import upload_image, generate_presigned_url
 
         # R16: Magic Bytes 校验
         try:
@@ -182,20 +199,12 @@ class RecognitionService:
         except Exception:
             return RecognitionResultOut(
                 status="error",
-                error_code="OCR_FAILED",
+                error_code="UPLOAD_FAILED",
                 error_hint="图片上传失败，请重试",
             )
 
         # 调用识别
         inner = self.recognize(image_data, user_id=user_id, image_key=key)
-
-        # REQ-28: 非题目图片
-        if self.mock_scenario == "non_question":
-            return RecognitionResultOut(
-                status="error",
-                error_code="OCR_FAILED",
-                error_hint="未识别到题目内容，请重新拍摄题目图片",
-            )
 
         candidate_out = None
         if inner.candidate:
@@ -206,7 +215,7 @@ class RecognitionService:
                 confidence=inner.candidate.confidence,
                 subject=inner.candidate.subject,
                 question_type=inner.candidate.question_type,
-                image_key=key,
+                image_url=generate_presigned_url(key),  # R23
             )
 
         return RecognitionResultOut(

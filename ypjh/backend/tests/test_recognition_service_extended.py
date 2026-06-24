@@ -13,8 +13,8 @@ def test_recognize_upload_returns_schema():
     assert isinstance(result, RecognitionResultOut)
     assert result.status in ("high_confidence", "pending_review", "error")
     if result.candidate:
-        assert result.candidate.image_key is not None
-        assert result.candidate.image_key.startswith("u1/original/")
+        assert result.candidate.image_url is not None
+        assert "u1/original/" in result.candidate.image_url  # presigned URL contains the key path
 
 
 def test_invalid_file_type_returns_error():
