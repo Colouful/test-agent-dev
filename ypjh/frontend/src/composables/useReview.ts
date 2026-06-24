@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { useReviewStore } from '@/stores/review'
 import { IS_MOCK, mockReview } from '@/api/mock'
-import { apiClient } from '@/api/client'
+import { reviewApi } from '@/api/endpoints/review'
 
 export function useReview() {
   const store = useReviewStore()
@@ -13,7 +13,7 @@ export function useReview() {
     try {
       const resp = IS_MOCK
         ? await mockReview.queue()
-        : (await apiClient.get('/v1/review/queue')).data
+        : (await reviewApi.queue()).data
       store.queue = resp.data.items
     } finally {
       loading.value = false
@@ -23,7 +23,7 @@ export function useReview() {
   async function fetchStats() {
     const resp = IS_MOCK
       ? await mockReview.stats()
-      : (await apiClient.get('/v1/review/stats')).data
+      : (await reviewApi.stats()).data
     store.stats = resp.data
   }
 
@@ -32,7 +32,7 @@ export function useReview() {
     try {
       IS_MOCK
         ? await mockReview.submitScore(questionId, score)
-        : await apiClient.post(`/v1/review/${questionId}/score`, { score })
+        : await reviewApi.submitScore(questionId, score)
       store.advance()
     } finally {
       submitting.value = false

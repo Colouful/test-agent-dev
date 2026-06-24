@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { useQuestionsStore } from '@/stores/questions'
 import { IS_MOCK, mockQuestions } from '@/api/mock'
-import { apiClient } from '@/api/client'
+import { questionsApi } from '@/api/endpoints/questions'
 import type { RecognitionResult } from '@/types'
 
 export function useQuestions() {
@@ -14,7 +14,7 @@ export function useQuestions() {
     try {
       const resp = IS_MOCK
         ? await mockQuestions.list(limit, offset)
-        : (await apiClient.get(`/v1/questions?limit=${limit}&offset=${offset}`)).data
+        : (await questionsApi.list(limit, offset)).data
       store.setList(resp.data.items, resp.data.total)
     } finally {
       store.loading = false
@@ -29,10 +29,8 @@ export function useQuestions() {
         const resp = await mockQuestions.recognize(file)
         recognitionResult.value = resp.data
       } else {
-        const form = new FormData()
-        form.append('image', file)
-        const resp = await apiClient.post('/v1/questions/recognize', form)
-        recognitionResult.value = resp.data.data
+        const resp = (await questionsApi.recognize(file)).data
+        recognitionResult.value = resp.data
       }
     } finally {
       recognizing.value = false
@@ -42,14 +40,14 @@ export function useQuestions() {
   async function confirmAndSave(data: Parameters<typeof mockQuestions.create>[0]) {
     const resp = IS_MOCK
       ? await mockQuestions.create(data)
-      : (await apiClient.post('/v1/questions', data)).data
+      : (await questionsApi.create(data)).data
     return resp.data
   }
 
   async function softDelete(id: string) {
     IS_MOCK
       ? await mockQuestions.softDelete(id)
-      : await apiClient.delete(`/v1/questions/${id}`)
+      : await questionsApi.delete(id)
     store.removeById(id)
   }
 

@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { IS_MOCK, mockAuth } from '@/api/mock'
-import { apiClient } from '@/api/client'
+import { authApi } from '@/api/endpoints/auth'
 
 export function useAuth() {
   const auth = useAuthStore()
@@ -16,7 +16,7 @@ export function useAuth() {
     try {
       const resp = IS_MOCK
         ? await mockAuth.login(email, password)
-        : (await apiClient.post('/v1/auth/login', { email, password })).data
+        : (await authApi.login(email, password)).data
       auth.setToken(resp.data.access_token)
       if (resp.data.user) auth.user = resp.data.user
       router.push('/dashboard')
@@ -33,7 +33,7 @@ export function useAuth() {
     try {
       IS_MOCK
         ? await mockAuth.register(email, password)
-        : await apiClient.post('/v1/auth/register', { email, password })
+        : await authApi.register(email, password)
       await login(email, password)
     } catch (e: unknown) {
       error.value = (e as Error).message || '注册失败'
