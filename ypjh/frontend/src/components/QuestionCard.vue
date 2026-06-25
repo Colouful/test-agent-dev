@@ -23,7 +23,7 @@ function goToDetail() {
     @click="goToDetail"
     class="bg-white rounded-xl shadow-sm border border-gray-100 p-5
            hover:shadow-md hover:border-primary-200 transition-all cursor-pointer
-           active:scale-[0.98]"
+           active:scale-[0.98] flex flex-col min-h-[160px]"
   >
     <div class="flex items-center justify-between mb-3">
       <div class="flex gap-2 flex-wrap">
@@ -63,7 +63,7 @@ function goToDetail() {
         class="w-full h-36 object-cover rounded-lg border border-gray-100" loading="lazy">
     </div>
 
-    <p class="font-serif text-gray-800 text-base leading-relaxed mb-3 whitespace-pre-wrap line-clamp-3">
+    <p class="font-serif text-gray-800 text-base leading-relaxed mb-3 whitespace-pre-wrap line-clamp-3 flex-1">
       {{ question.content }}
     </p>
 
