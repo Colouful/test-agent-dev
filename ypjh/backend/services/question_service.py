@@ -11,6 +11,8 @@ from backend.schemas.question import (
     QuestionListOut,
     QuestionOut,
     QuestionUpdate,
+    STATUS_FORWARD_ORDER,
+    VALID_ERROR_TYPES,
 )
 
 _repo = QuestionRepository()
@@ -127,7 +129,6 @@ class QuestionService:
         user_id: str,
         error_type: str,
     ) -> QuestionOut:
-        from backend.schemas.question import VALID_ERROR_TYPES, STATUS_FORWARD_ORDER
         if error_type not in VALID_ERROR_TYPES:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -156,7 +157,6 @@ class QuestionService:
         user_id: str,
         new_status: str,
     ) -> QuestionOut:
-        from backend.schemas.question import STATUS_FORWARD_ORDER
         if new_status not in STATUS_FORWARD_ORDER:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

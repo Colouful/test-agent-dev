@@ -100,3 +100,26 @@ async def test_pending_correction_count_in_stats(session: AsyncSession):
     # 待分析 的题不算待订正，只有 learning_status="待分析" 才需要被标记
     assert hasattr(stats, "pending_correction_count")
     assert stats.pending_correction_count == 1  # 题1 是 待分析，尚未标注错因
+
+
+@pytest.mark.asyncio
+async def test_set_learning_status_cross_user_raises(session: AsyncSession):
+    from fastapi import HTTPException
+    svc = QuestionService()
+    out = await svc.create(session, "u1", QuestionCreate(content="题目", correct_answer="答案"))
+    await svc.set_error_type(session, out.id, "u1", "计算错误")
+    await svc.set_learning_status(session, out.id, "u1", "待巩固")
+    with pytest.raises(HTTPException) as exc:
+        await svc.set_learning_status(session, out.id, "u2", "待复习")
+    assert exc.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_set_learning_status_same_status_idempotent(session: AsyncSession):
+    svc = QuestionService()
+    out = await svc.create(session, "u1", QuestionCreate(content="题目", correct_answer="答案"))
+    await svc.set_error_type(session, out.id, "u1", "计算错误")
+    await svc.set_learning_status(session, out.id, "u1", "待巩固")
+    # calling again with same status should not raise
+    updated = await svc.set_learning_status(session, out.id, "u1", "待巩固")
+    assert updated.learning_status == "待巩固"
