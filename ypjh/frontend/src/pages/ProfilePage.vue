@@ -3,7 +3,7 @@
 import { ref, onMounted, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { IS_MOCK, mockReview, mockProfile } from '@/api/mock'
+import { IS_MOCK, mockReview, mockProfile, mockQuestions } from '@/api/mock'
 import { reviewApi } from '@/api/endpoints/review'
 import { questionsApi } from '@/api/endpoints/questions'
 import { profileApi } from '@/api/endpoints/profile'
@@ -33,7 +33,7 @@ onMounted(async () => {
   try {
     const [listResp, statsResp] = await Promise.all([
       IS_MOCK
-        ? (await import('@/api/mock')).mockQuestions.list(1, 0)
+        ? mockQuestions.list(1, 0)
         : (await questionsApi.list(1, 0)).data,
       IS_MOCK
         ? mockReview.stats()
