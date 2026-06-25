@@ -8,7 +8,7 @@ const tabs = [
   { to: '/dashboard', icon: '🏠', label: '首页' },
   { to: '/questions', icon: '📚', label: '错题' },
   { to: '/review',    icon: '🔄', label: '复习' },
-  { to: '/upload',    icon: '📷', label: '上传' },
+  { to: '/profile',   icon: '👤', label: '我的' },
 ]
 
 function isActive(to: string) {

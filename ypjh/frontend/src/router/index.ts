@@ -11,7 +11,8 @@ const router = createRouter({
     { path: '/upload', component: () => import('@/pages/UploadPage.vue') },
     { path: '/questions',    component: () => import('@/pages/QuestionListPage.vue') },
     { path: '/questions/:id',component: () => import('@/pages/QuestionDetailPage.vue') },
-    { path: '/review',       component: () => import('@/pages/ReviewPage.vue') },
+    { path: '/review', component: () => import('@/pages/ReviewPage.vue') },
+    { path: '/profile', component: () => import('@/pages/ProfilePage.vue') },
     { path: '/print', component: () => import('@/pages/PrintPage.vue') },
   ],
 })
