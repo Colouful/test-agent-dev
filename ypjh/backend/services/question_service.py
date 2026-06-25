@@ -119,3 +119,32 @@ class QuestionService:
             )
         await _repo.soft_delete(session, q)
         await session.commit()
+
+    async def set_error_type(
+        self,
+        session: AsyncSession,
+        question_id: str,
+        user_id: str,
+        error_type: str,
+    ) -> QuestionOut:
+        from backend.schemas.question import VALID_ERROR_TYPES, STATUS_FORWARD_ORDER
+        if error_type not in VALID_ERROR_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"code": "INVALID_ERROR_TYPE", "message": f"错因必须是: {', '.join(sorted(VALID_ERROR_TYPES))}"},
+            )
+        q = await _repo.get_by_id(session, question_id, user_id)
+        if q is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "NOT_FOUND", "message": "题目不存在"},
+            )
+        q.user_error_type = error_type
+        # 正向推进：仅当当前状态靠前时推进到 待订正
+        current_idx = STATUS_FORWARD_ORDER.index(q.learning_status) if q.learning_status in STATUS_FORWARD_ORDER else 0
+        target_idx = STATUS_FORWARD_ORDER.index("待订正")
+        if current_idx < target_idx:
+            q.learning_status = "待订正"
+        result = _to_out(q)
+        await session.commit()
+        return result

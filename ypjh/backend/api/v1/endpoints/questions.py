@@ -6,6 +6,7 @@ from backend.core.security import get_current_user
 from backend.models.user import User
 from backend.schemas.common import ApiResponse
 from backend.schemas.question import (
+    ErrorTypeUpdate,
     QuestionCreate,
     QuestionListOut,
     QuestionOut,
@@ -66,3 +67,14 @@ async def delete_question(
     session: AsyncSession = Depends(get_session),
 ) -> None:
     await _svc.delete(session, question_id, current_user.id)
+
+
+@router.patch("/{question_id}/error-type", response_model=ApiResponse[QuestionOut])
+async def set_error_type(
+    question_id: str,
+    body: ErrorTypeUpdate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> ApiResponse[QuestionOut]:
+    result = await _svc.set_error_type(session, question_id, current_user.id, body.user_error_type)
+    return ApiResponse(data=result)

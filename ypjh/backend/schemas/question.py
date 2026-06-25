@@ -57,3 +57,17 @@ class QuestionListOut(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+VALID_ERROR_TYPES = frozenset({
+    "知识点没掌握", "概念混淆", "漏看题目条件",
+    "解题思路错误", "计算错误", "粗心手误", "时间不足", "其他",
+})
+
+STATUS_FORWARD_ORDER = [
+    "待分析", "待订正", "待巩固", "待复习", "基本掌握", "已掌握",
+]
+
+
+class ErrorTypeUpdate(BaseModel):
+    user_error_type: str
