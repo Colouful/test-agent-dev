@@ -29,6 +29,7 @@ async function onConfirm() {
       subject: recognitionResult.value.candidate.subject ?? undefined,
       question_type: recognitionResult.value.candidate.question_type ?? undefined,
       confidence: recognitionResult.value.candidate.confidence,
+      analysis: recognitionResult.value.candidate.analysis ?? null,
     })
     toast?.show('录题成功！', 'success')
     router.push('/questions')

@@ -1,3 +1,10 @@
+export interface Analysis {
+  explanation: string
+  knowledge_points: string[]
+  key_examination: string
+  error_reason: string
+}
+
 export interface User {
   id: string
   email: string
@@ -27,6 +34,7 @@ export interface Question {
   next_review_at: string | null
   created_at: string
   updated_at: string
+  analysis: Analysis | null
 }
 
 export interface QuestionList {
@@ -46,6 +54,7 @@ export interface RecognitionResult {
     subject: string | null
     question_type: string | null
     image_key: string | null
+    analysis: Analysis | null
   } | null
   error_hint: string | null
   error_code: string | null

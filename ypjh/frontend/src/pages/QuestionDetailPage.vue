@@ -118,6 +118,45 @@ const TYPE_LABELS: Record<string, string> = {
           </div>
         </div>
 
+        <!-- AI 解析卡片 -->
+        <div v-if="question.analysis" class="bg-white rounded-2xl shadow-sm p-5 space-y-4">
+          <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+            <span>💡</span> AI 解析
+          </h3>
+
+          <!-- 答案解析 -->
+          <div>
+            <p class="text-xs text-gray-400 mb-1">答案解析</p>
+            <p class="text-sm text-gray-700 leading-relaxed">{{ question.analysis.explanation }}</p>
+          </div>
+
+          <!-- 知识点 -->
+          <div>
+            <p class="text-xs text-gray-400 mb-1.5">涉及知识点</p>
+            <div class="flex flex-wrap gap-1.5">
+              <span
+                v-for="kp in question.analysis.knowledge_points"
+                :key="kp"
+                class="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full"
+              >
+                {{ kp }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 考查要点 -->
+          <div>
+            <p class="text-xs text-gray-400 mb-1">考查要点</p>
+            <p class="text-sm text-amber-700 leading-relaxed">{{ question.analysis.key_examination }}</p>
+          </div>
+
+          <!-- 为什么会出错 -->
+          <div>
+            <p class="text-xs text-gray-400 mb-1">为什么会出错</p>
+            <p class="text-sm text-red-600 leading-relaxed">{{ question.analysis.error_reason }}</p>
+          </div>
+        </div>
+
         <!-- 统计信息 -->
         <div class="bg-white rounded-2xl shadow-sm p-5">
           <p class="text-xs text-gray-400 mb-3">复习记录</p>
