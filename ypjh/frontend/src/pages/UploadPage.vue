@@ -3,39 +3,34 @@
 import { ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuestions } from '@/composables/useQuestions'
+import ConfirmSheet from '@/components/ConfirmSheet.vue'
+import type { Question } from '@/types'
 
 const router = useRouter()
 const toast = inject<{ show: (t: string, type?: 'success'|'error'|'info') => void }>('toast')
-const { recognizing, recognitionResult, recognize, confirmAndSave } = useQuestions()
+const { recognizing, recognitionResult, recognize } = useQuestions()
 const fileInput = ref<HTMLInputElement | null>(null)
 const previewUrl = ref<string | null>(null)
-const saving = ref(false)
+const sheetVisible = ref(false)
 
 async function onFileChange(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
   previewUrl.value = URL.createObjectURL(file)
   await recognize(file)
+  if (recognitionResult.value?.status !== 'error') {
+    sheetVisible.value = true
+  }
 }
 
-async function onConfirm() {
-  if (!recognitionResult.value?.candidate) return
-  saving.value = true
-  try {
-    await confirmAndSave({
-      content: recognitionResult.value.candidate.content,
-      correct_answer: recognitionResult.value.candidate.correct_answer,
-      wrong_answer: recognitionResult.value.candidate.wrong_answer ?? undefined,
-      subject: recognitionResult.value.candidate.subject ?? undefined,
-      question_type: recognitionResult.value.candidate.question_type ?? undefined,
-      confidence: recognitionResult.value.candidate.confidence,
-      analysis: recognitionResult.value.candidate.analysis ?? null,
-    })
-    toast?.show('录题成功！', 'success')
-    router.push('/questions')
-  } finally {
-    saving.value = false
-  }
+function onSheetClose() {
+  sheetVisible.value = false
+}
+
+function onSaved(question: Question) {
+  sheetVisible.value = false
+  toast?.show('录题成功！', 'success')
+  router.push(`/questions/${question.id}?new=1`)
 }
 </script>
 
@@ -73,10 +68,10 @@ async function onConfirm() {
         <p class="text-gray-600 text-sm">AI 识别中，请稍候…</p>
       </div>
 
-      <!-- 识别结果 -->
-      <div v-if="recognitionResult && !recognizing" class="bg-white rounded-2xl shadow-sm p-5 space-y-4">
-        <div v-if="recognitionResult.status === 'error'"
-          class="text-center py-4">
+      <!-- 识别完成提示（Sheet 已打开，不再展示卡片） -->
+      <div v-if="recognitionResult && !recognizing && recognitionResult.status === 'error'"
+        class="bg-white rounded-2xl shadow-sm p-5">
+        <div class="text-center py-4">
           <p class="text-red-500 font-medium">识别失败</p>
           <p class="text-sm text-gray-400 mt-1">{{ recognitionResult.error_hint || '请重新拍摄' }}</p>
           <button @click="previewUrl = null; recognitionResult = null"
@@ -84,47 +79,14 @@ async function onConfirm() {
             重新选择
           </button>
         </div>
-
-        <template v-else-if="recognitionResult.candidate">
-          <div class="flex items-center gap-2">
-            <span class="text-xs px-2 py-0.5 rounded-full"
-              :class="recognitionResult.status === 'high_confidence'
-                ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-600'">
-              {{ recognitionResult.status === 'high_confidence' ? '识别成功' : '需人工确认' }}
-            </span>
-            <span class="text-xs text-gray-400">
-              置信度 {{ Math.round(recognitionResult.candidate.confidence * 100) }}%
-            </span>
-          </div>
-
-          <div>
-            <p class="text-xs text-gray-400 mb-1">题目内容</p>
-            <p class="font-serif text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">
-              {{ recognitionResult.candidate.content }}
-            </p>
-          </div>
-          <div>
-            <p class="text-xs text-gray-400 mb-1">正确答案</p>
-            <p class="text-sm text-green-700 font-medium">{{ recognitionResult.candidate.correct_answer }}</p>
-          </div>
-          <div v-if="recognitionResult.candidate.wrong_answer">
-            <p class="text-xs text-gray-400 mb-1">我的错误</p>
-            <p class="text-sm text-red-600">{{ recognitionResult.candidate.wrong_answer }}</p>
-          </div>
-
-          <div class="flex gap-3 pt-2">
-            <button @click="previewUrl = null; recognitionResult = null"
-              class="flex-1 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
-              重新拍摄
-            </button>
-            <button @click="onConfirm" :disabled="saving"
-              class="flex-1 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium
-                     hover:bg-primary-600 disabled:opacity-60 transition-colors">
-              {{ saving ? '保存中…' : '确认录入' }}
-            </button>
-          </div>
-        </template>
       </div>
     </main>
+
+      <ConfirmSheet
+        :visible="sheetVisible"
+        :candidate="recognitionResult?.candidate ?? null"
+        @close="onSheetClose"
+        @saved="onSaved"
+      />
   </div>
 </template>
