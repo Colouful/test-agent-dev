@@ -30,6 +30,7 @@ class QuestionRepository:
             interval_days=1,
             review_count=0,
             next_review_at=datetime.utcnow(),  # naive UTC，立即可复习
+            analysis=data.analysis,
         )
         session.add(q)
         await session.flush()

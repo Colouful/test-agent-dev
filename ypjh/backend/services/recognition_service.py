@@ -17,6 +17,8 @@ from check_question_schema import (
     check_question_schema,
     is_high_confidence,
 )
+from backend.core.image_utils import validate_image_bytes, fix_exif_orientation
+from backend.core.s3_client import upload_image, generate_presigned_url
 
 # ── Mock 配置 ─────────────────────────────────────────────────────────────
 # 通过环境变量控制，无需修改代码即可切换到真实 Bedrock
@@ -35,6 +37,12 @@ MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "confidence": 0.92,
         "subject": "数学",
         "question_type": "fill",
+        "analysis": {
+            "explanation": "将 x=3 代入 f(x)=x²+2x+1，得 f(3)=9+6+1=16。",
+            "knowledge_points": ["二次函数求值", "代入法"],
+            "key_examination": "考查函数值的计算能力",
+            "error_reason": "常见错误是漏算某一项或符号出错，应逐项代入后求和。",
+        },
     },
     "blurry": {
         "content": "模糊识别结果",
@@ -54,6 +62,13 @@ MOCK_RESPONSES: dict[str, dict[str, Any]] = {
     },
 }
 
+MOCK_ANALYSIS: dict = {
+    "explanation": "根据第二象限的三角函数符号规则，sin>0 而 cos<0，代入勾股定理得 cos²θ=1-9/25=16/25，取负值得 cosθ=-4/5。",
+    "knowledge_points": ["三角函数", "第二象限符号", "勾股定理"],
+    "key_examination": "考查三角函数在各象限的符号判断能力",
+    "error_reason": "学生常忽略象限限制，直接取正值，未考虑 cos 在第二象限为负。",
+}
+
 
 # ── 主流程 ────────────────────────────────────────────────────────────────
 
@@ -67,11 +82,13 @@ class RecognitionResult:
         candidate: QuestionCandidate | None = None,
         error_hint: str | None = None,
         image_key: str | None = None,
+        analysis: dict | None = None,
     ) -> None:
         self.status = status          # high_confidence / pending_review / error
         self.candidate = candidate
         self.error_hint = error_hint
         self.image_key = image_key
+        self.analysis = analysis
 
 
 class RecognitionService:
@@ -117,6 +134,20 @@ class RecognitionService:
                 image_key=key,
             )
 
+        # 提取 analysis（R2 扩展：缺失或格式错误 → null，不中断流程）
+        # 从 raw 中移除 analysis，避免传入 check_question_schema 时字段类型冲突
+        raw_analysis = raw.pop("analysis", None)
+        analysis: dict | None = None
+        if isinstance(raw_analysis, dict):
+            required = ("explanation", "knowledge_points", "key_examination", "error_reason")
+            if all(k in raw_analysis for k in required) and isinstance(raw_analysis.get("knowledge_points"), list):
+                analysis = {
+                    "explanation": str(raw_analysis["explanation"]),
+                    "knowledge_points": [str(k) for k in raw_analysis["knowledge_points"] if isinstance(k, str)],
+                    "key_examination": str(raw_analysis["key_examination"]),
+                    "error_reason": str(raw_analysis["error_reason"]),
+                }
+
         # Step 3: R2 — confidence 缺失按 0 处理（不得默认 1.0）
         if "confidence" not in raw:
             raw["confidence"] = 0.0
@@ -143,6 +174,7 @@ class RecognitionService:
                 status="high_confidence",
                 candidate=candidate,
                 image_key=key,
+                analysis=analysis,
             )
         else:
             return RecognitionResult(
@@ -150,6 +182,7 @@ class RecognitionService:
                 candidate=candidate,
                 error_hint=f"识别置信度 {candidate.confidence:.0%}，请手动核对",
                 image_key=key,
+                analysis=analysis,
             )
 
     def _upload_to_s3(self, image_bytes: bytes) -> str:
@@ -210,8 +243,6 @@ class RecognitionService:
     ) -> "RecognitionResultOut":
         """生产入口：校验→EXIF修正→S3上传→识别→返回 Schema。"""
         from backend.schemas.recognition import QuestionCandidateOut, RecognitionResultOut
-        from backend.core.image_utils import validate_image_bytes, fix_exif_orientation
-        from backend.core.s3_client import upload_image, generate_presigned_url
 
         # R16: Magic Bytes 校验
         try:
@@ -241,6 +272,13 @@ class RecognitionService:
 
         candidate_out = None
         if inner.candidate:
+            from backend.schemas.recognition import AnalysisOut
+            analysis_out = None
+            if inner.analysis is not None:
+                try:
+                    analysis_out = AnalysisOut(**inner.analysis)
+                except Exception:
+                    analysis_out = None
             candidate_out = QuestionCandidateOut(
                 content=inner.candidate.content,
                 correct_answer=inner.candidate.correct_answer,
@@ -249,6 +287,7 @@ class RecognitionService:
                 subject=inner.candidate.subject,
                 question_type=inner.candidate.question_type,
                 image_url=generate_presigned_url(key),  # R23
+                analysis=analysis_out,
             )
 
         return RecognitionResultOut(
