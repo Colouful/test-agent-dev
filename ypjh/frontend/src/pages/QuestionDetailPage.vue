@@ -1,6 +1,6 @@
 <!-- frontend/src/pages/QuestionDetailPage.vue -->
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { defineComponent, h, ref as vref } from 'vue'
 import { useRoute } from 'vue-router'
 import { IS_MOCK, mockQuestions } from '@/api/mock'
@@ -30,6 +30,63 @@ const question = ref<Question | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+const showErrorBanner = ref(true)
+const errorTypeExpanded = ref(false)
+const submittingErrorType = ref(false)
+const submittingStatus = ref(false)
+const selectedErrorType = ref('')
+
+const isNewQuestion = computed(() => route.query.new === '1')
+const showErrorTypeGuide = computed(() =>
+  isNewQuestion.value &&
+  showErrorBanner.value &&
+  question.value?.learning_status === '待分析'
+)
+
+const ERROR_TYPES = [
+  '知识点没掌握', '概念混淆', '漏看题目条件', '解题思路错误',
+  '计算错误', '粗心手误', '时间不足', '其他',
+]
+
+const errorBannerRef = ref<HTMLElement | null>(null)
+
+async function submitErrorType() {
+  if (!selectedErrorType.value || !question.value) return
+  submittingErrorType.value = true
+  try {
+    let updated: Question
+    if (IS_MOCK) {
+      const resp = await mockQuestions.setErrorType(question.value.id, selectedErrorType.value)
+      updated = resp.data
+    } else {
+      const resp = await questionsApi.setErrorType(question.value.id, selectedErrorType.value)
+      updated = resp.data.data
+    }
+    question.value = updated
+    showErrorBanner.value = false
+  } finally {
+    submittingErrorType.value = false
+  }
+}
+
+async function advanceStatus(newStatus: string) {
+  if (!question.value) return
+  submittingStatus.value = true
+  try {
+    let updated: Question
+    if (IS_MOCK) {
+      const resp = await mockQuestions.setLearningStatus(question.value.id, newStatus)
+      updated = resp.data
+    } else {
+      const resp = await questionsApi.setLearningStatus(question.value.id, newStatus)
+      updated = resp.data.data
+    }
+    question.value = updated
+  } finally {
+    submittingStatus.value = false
+  }
+}
+
 onMounted(async () => {
   try {
     const id = route.params.id as string
@@ -48,6 +105,10 @@ onMounted(async () => {
     error.value = '加载失败，请返回重试'
   } finally {
     loading.value = false
+    if (isNewQuestion.value) {
+      await nextTick()
+      errorBannerRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   }
 })
 
@@ -107,6 +168,48 @@ const TYPE_LABELS: Record<string, string> = {
           </span>
         </div>
 
+        <!-- 错因诊断引导横幅 -->
+        <div v-if="showErrorTypeGuide" ref="errorBannerRef" class="bg-orange-50 border border-orange-200 rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-orange-800 font-medium">
+              📌 标记一下你的错误原因，帮助AI优化解析
+            </p>
+            <button v-if="!errorTypeExpanded"
+              @click="errorTypeExpanded = true"
+              class="text-xs text-orange-600 border border-orange-300 rounded-lg px-3 py-1.5 hover:bg-orange-100 shrink-0 ml-3">
+              立即标记 →
+            </button>
+          </div>
+
+          <!-- 展开的选择区 -->
+          <div v-if="errorTypeExpanded" class="mt-4 space-y-3">
+            <p class="text-xs text-gray-500">你认为这题出错的主要原因？</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                v-for="t in ERROR_TYPES" :key="t"
+                @click="selectedErrorType = t"
+                :class="[
+                  'text-xs py-2 px-3 rounded-lg border transition-colors text-left',
+                  selectedErrorType === t
+                    ? 'border-orange-400 bg-orange-50 text-orange-700 font-medium'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                ]"
+              >{{ t }}</button>
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button @click="submitErrorType" :disabled="!selectedErrorType || submittingErrorType"
+                class="flex-1 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium
+                       hover:bg-orange-600 disabled:opacity-50 transition-colors">
+                {{ submittingErrorType ? '提交中…' : '确认' }}
+              </button>
+              <button @click="showErrorBanner = false"
+                class="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-500 hover:bg-gray-50">
+                跳过
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- 图片 -->
         <div v-if="question.image_url" class="bg-white rounded-2xl overflow-hidden shadow-sm">
           <img :src="question.image_url" alt="题目图片"
@@ -142,6 +245,17 @@ const TYPE_LABELS: Record<string, string> = {
           <h3 class="font-semibold text-gray-800 flex items-center gap-2">
             <span>💡</span> AI 解析
           </h3>
+
+          <!-- 用户错因标签 -->
+          <div v-if="question.user_error_type" class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs px-2.5 py-1 bg-orange-100 text-orange-700 rounded-full font-medium">
+              你的错因：{{ question.user_error_type }}
+            </span>
+            <span v-if="question.analysis.error_analysis"
+              class="text-xs px-2.5 py-1 bg-red-50 text-red-600 rounded-full font-medium">
+              AI诊断：{{ question.analysis.error_analysis.type }}
+            </span>
+          </div>
 
           <!-- 新格式：解题思路 -->
           <div v-if="question.analysis.solution_summary" class="bg-gray-50 rounded-lg p-3">
@@ -290,5 +404,26 @@ const TYPE_LABELS: Record<string, string> = {
         </div>
       </template>
     </main>
+
+    <!-- 底部操作栏（随学习状态变化） -->
+    <div v-if="question && (question.learning_status === '待订正' || question.learning_status === '待巩固')"
+      class="fixed bottom-16 left-0 right-0 z-20 px-4 pb-2 max-w-2xl mx-auto">
+      <button
+        v-if="question.learning_status === '待订正'"
+        @click="advanceStatus('待巩固')"
+        :disabled="submittingStatus"
+        class="w-full py-3.5 bg-blue-500 text-white rounded-xl font-semibold text-sm
+               hover:bg-blue-600 disabled:opacity-50 transition-colors shadow-lg">
+        {{ submittingStatus ? '更新中…' : '✓ 我已理解，进入复习' }}
+      </button>
+      <button
+        v-else-if="question.learning_status === '待巩固'"
+        @click="advanceStatus('待复习')"
+        :disabled="submittingStatus"
+        class="w-full py-3.5 bg-purple-500 text-white rounded-xl font-semibold text-sm
+               hover:bg-purple-600 disabled:opacity-50 transition-colors shadow-lg">
+        {{ submittingStatus ? '更新中…' : '📚 加入今日复习' }}
+      </button>
+    </div>
   </div>
 </template>
