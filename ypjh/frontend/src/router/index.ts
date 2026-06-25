@@ -9,8 +9,9 @@ const router = createRouter({
     { path: '/', redirect: '/dashboard' },
     { path: '/dashboard', component: () => import('@/pages/DashboardPage.vue') },
     { path: '/upload', component: () => import('@/pages/UploadPage.vue') },
-    { path: '/questions', component: () => import('@/pages/QuestionListPage.vue') },
-    { path: '/review', component: () => import('@/pages/ReviewPage.vue') },
+    { path: '/questions',    component: () => import('@/pages/QuestionListPage.vue') },
+    { path: '/questions/:id',component: () => import('@/pages/QuestionDetailPage.vue') },
+    { path: '/review',       component: () => import('@/pages/ReviewPage.vue') },
     { path: '/print', component: () => import('@/pages/PrintPage.vue') },
   ],
 })
