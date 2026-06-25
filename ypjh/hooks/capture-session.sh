@@ -9,7 +9,7 @@ COMMITS=$(git -C /workshop/ypjh log --oneline -3 --no-decorate 2>/dev/null || tr
 
 {
   echo ""
-  echo "## ${TIMESTAMP} | compact"
+  echo "## ${TIMESTAMP} | session"
   echo "**改动文件：** ${FILES:-无}"
   echo "**Git：** ${COMMITS:-无近期提交}"
   echo ""

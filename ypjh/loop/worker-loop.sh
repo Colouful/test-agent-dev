@@ -1,167 +1,190 @@
 #!/usr/bin/env bash
-# loop/worker-loop.sh — 错题本 Worker Loop（含三道熔断）
+# loop/worker-loop.sh — Worker Loop（熔断 + 记忆 + 2-Strike）
 #
-# 用途：在 CI / 自动化场景中反复执行验证，直到通过或触发熔断。
+# 退出码：
+#   0 = 验证通过（修好了）
+#   1 = 达到最大轮数或 3-strike，未收敛
+#   2 = 时间超限
+#   3 = 环境错误（verify.sh 本身坏了）
 #
-# 熔断条件（任意一个触发即停止）：
-#   1. MAX_ITER  — 达到最大迭代次数（默认 10）
-#   2. MAX_MIN   — 超过最大运行时间（默认 30 分钟）
-#   3. CONSEC_FAIL — 连续失败次数（默认 3 次）→ 人类兜底
-#
-# 使用方式：
-#   bash loop/worker-loop.sh                    # 运行完整验证（verify.sh + arch-check.sh）
-#   MAX_ITER=3 bash loop/worker-loop.sh         # 自定义最大次数
-#   TASK="bash ci/arch-check.sh" bash loop/worker-loop.sh  # 自定义任务
-#
-# 退出码：0=任务通过，1=熔断触发，2=环境错误
-
-set -euo pipefail
+# 用法：
+#   bash loop/worker-loop.sh
+#   MAX_ITER=3 MAX_SECONDS=120 bash loop/worker-loop.sh
+set -uo pipefail
 
 # ── 配置 ──────────────────────────────────────────────────────────────────────
 
-MAX_ITER="${MAX_ITER:-10}"
-MAX_MIN="${MAX_MIN:-30}"
-CONSEC_FAIL_LIMIT="${CONSEC_FAIL_LIMIT:-3}"
-TASK="${TASK:-bash ci/verify.sh && bash ci/arch-check.sh}"
-STATE_FILE="$(dirname "$0")/STATE.md"
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$PROJECT_ROOT"
+
+MAX_ITER="${MAX_ITER:-5}"
+MAX_SECONDS="${MAX_SECONDS:-300}"
+CONSEC_FAIL_LIMIT="${CONSEC_FAIL_LIMIT:-3}"
+TASK="${TASK:-修复识别功能的 bug，使 ci/verify.sh 通过}"
+STATE_FILE="loop/STATE.md"
+VERIFY_CMD="bash ci/verify.sh"
+
+START_TIME=$(date +%s)
 
 # ── 初始化 ────────────────────────────────────────────────────────────────────
 
-ITER=0
-CONSEC_FAIL=0
-START_TS=$(date +%s)
-START_TIME=$(date '+%Y-%m-%d %H:%M:%S')
-LOOP_STATUS="running"
+echo "═══════════════════════════════════════════════════════"
+echo "  Worker Loop 启动"
+echo "  MAX_ITER=$MAX_ITER  MAX_SECONDS=${MAX_SECONDS}s  CONSEC_FAIL=$CONSEC_FAIL_LIMIT"
+echo "═══════════════════════════════════════════════════════"
+echo ""
 
-_elapsed_min() {
-  echo $(( ($(date +%s) - START_TS) / 60 ))
+# 清空 STATE.md
+: > "$STATE_FILE"
+
+# 环境检查：verify.sh 存在且基本可用
+if [ ! -x "ci/verify.sh" ]; then
+  echo "LOOP_EXIT code=3 reason=verify.sh_not_found elapsed=0s rounds=0"
+  exit 3
+fi
+
+# ── 辅助函数 ──────────────────────────────────────────────────────────────────
+
+elapsed_seconds() {
+  echo $(( $(date +%s) - START_TIME ))
 }
 
-_update_state() {
-  local status="$1" iter="$2" last_result="$3" last_error="${4:-}"
-  cat > "$STATE_FILE" <<EOF
-# Worker Loop 状态记忆
-
-## 当前状态
-
-\`\`\`
-LOOP_STATUS: $status
-CURRENT_ITER: $iter
-MAX_ITER: $MAX_ITER
-START_TIME: $START_TIME
-LAST_ERROR: ${last_error:-（无）}
-LAST_RESULT: $last_result
-\`\`\`
-
-## 迭代历史
-
-（详见本次运行的终端输出）
-
-## 熔断记录
-
-$([ "$status" = "breaker_triggered" ] && echo "⚠️ 熔断于第 $iter 轮，原因：$last_error" || echo "（无熔断历史）")
-
----
-> 此文件由 \`loop/worker-loop.sh\` 自动更新。手动修改时注意保持格式。
-EOF
-}
-
-# ── 人类兜底函数 ──────────────────────────────────────────────────────────────
-
-_human_fallback() {
-  local reason="$1"
-  echo ""
-  echo "=================================================="
-  echo "  ⚠️  需要人类介入"
-  echo "=================================================="
-  echo ""
-  echo "  熔断原因：$reason"
-  echo ""
-  echo "  建议排查步骤："
-  echo "  1. 查看上方输出，找到最后一次失败的具体错误信息"
-  echo "  2. 检查 loop/STATE.md 了解本次运行状态"
-  echo "  3. 修复问题后重新运行: bash loop/worker-loop.sh"
-  echo ""
-  echo "  如需只跑验证（不循环）："
-  echo "    bash ci/verify.sh        # 识别功能验证"
-  echo "    bash ci/arch-check.sh    # 架构护栏"
-  echo "    python3 ddd/score_health.py  # DDD 健康分"
-  echo ""
-  echo "  STATE 已写入: loop/STATE.md"
-  echo "=================================================="
+extract_fail_stage() {
+  # 从 verify 输出中提取失败阶段关键词
+  echo "$1" | grep -o "第 [0-9] 层" | tail -1 || echo "unknown"
 }
 
 # ── 主循环 ────────────────────────────────────────────────────────────────────
 
-cd "$PROJECT_ROOT"
+CONSEC_FAILS=0
+LAST_STAGE=""
+PREV_STAGE=""
+STRIKE_COUNT=0
 
-echo "=================================================="
-echo "  Worker Loop 启动"
-echo "  MAX_ITER=$MAX_ITER  MAX_MIN=$MAX_MIN  CONSEC_FAIL_LIMIT=$CONSEC_FAIL_LIMIT"
-echo "  TASK: $TASK"
-echo "  START: $START_TIME"
-echo "=================================================="
-echo ""
+for (( i=1; i<=MAX_ITER; i++ )); do
+  echo "── 第 ${i}/${MAX_ITER} 轮 ──────────────────────────────────"
+  echo ""
 
-_update_state "running" 0 "（尚未运行）"
-
-while true; do
-  ITER=$((ITER + 1))
-  ELAPSED=$(_elapsed_min)
-
-  echo "──────────────────────────────────────────────────"
-  echo "  迭代 #$ITER / $MAX_ITER  |  已运行 ${ELAPSED}min / ${MAX_MIN}min"
-  echo "──────────────────────────────────────────────────"
-
-  # 熔断 1：超过最大迭代次数
-  if [ "$ITER" -gt "$MAX_ITER" ]; then
-    REASON="达到最大迭代次数 $MAX_ITER"
+  # 1. 时间检查
+  ELAPSED=$(elapsed_seconds)
+  if [ "$ELAPSED" -ge "$MAX_SECONDS" ]; then
     echo ""
-    echo "🔴 熔断触发：$REASON"
-    _update_state "breaker_triggered" "$ITER" "迭代上限" "$REASON"
-    _human_fallback "$REASON"
-    exit 1
+    echo "⏱ 时间超限（${ELAPSED}s >= ${MAX_SECONDS}s）"
+    echo ""
+    echo "LOOP_EXIT code=2 reason=timeout elapsed=${ELAPSED}s rounds=$((i-1))"
+    exit 2
   fi
 
-  # 熔断 2：超过最大时间
-  if [ "$ELAPSED" -ge "$MAX_MIN" ]; then
-    REASON="运行时间超过 ${MAX_MIN} 分钟"
-    echo ""
-    echo "🔴 熔断触发：$REASON"
-    _update_state "breaker_triggered" "$ITER" "时间超限" "$REASON"
-    _human_fallback "$REASON"
-    exit 1
+  # 2. 构建上下文
+  CONTEXT="任务：$TASK
+
+项目根目录：$PROJECT_ROOT
+验证命令：$VERIFY_CMD
+当前是第 ${i} 轮尝试（共 $MAX_ITER 轮上限）。
+"
+
+  # 追加历史教训
+  if [ -s "$STATE_FILE" ]; then
+    CONTEXT="${CONTEXT}
+── 历史记录（前几轮的失败教训）──
+$(cat "$STATE_FILE")
+── 历史结束 ──
+
+请根据上面的失败记录避开已尝试的方向。
+"
   fi
 
-  # 执行任务
-  if bash -c "$TASK" 2>&1; then
-    echo ""
-    echo "✅ 迭代 #$ITER 通过"
-    CONSEC_FAIL=0
-    _update_state "pass" "$ITER" "PASS"
-    echo ""
-    echo "=================================================="
-    echo "  LOOP_OK — 任务在第 $ITER 轮通过 ✓"
-    echo "=================================================="
-    exit 0
-  else
-    CONSEC_FAIL=$((CONSEC_FAIL + 1))
-    echo ""
-    echo "❌ 迭代 #$ITER 失败（连续失败: $CONSEC_FAIL / $CONSEC_FAIL_LIMIT）"
-    _update_state "running" "$ITER" "FAIL" "连续失败 $CONSEC_FAIL 次"
+  # 2-Strike 升级：连续两轮同阶段失败
+  if [ "$STRIKE_COUNT" -ge 2 ]; then
+    CONTEXT="${CONTEXT}
+⚠️ 前两轮在同一个地方失败了（${LAST_STAGE}）。不要继续用类似方法修。
+请先：1. 分析 root cause  2. 提出不同思路  3. 再动手修
+"
+  fi
 
-    # 熔断 3：连续失败过多
-    if [ "$CONSEC_FAIL" -ge "$CONSEC_FAIL_LIMIT" ]; then
-      REASON="连续失败 $CONSEC_FAIL 次，超过阈值 $CONSEC_FAIL_LIMIT"
+  # 3. 调用 claude
+  echo "  调用 Claude 修复..."
+  AGENT_OUTPUT=$(claude -p "$CONTEXT" --dangerously-skip-permissions 2>&1 | tail -c 2000 || true)
+  AGENT_SUMMARY=$(echo "$AGENT_OUTPUT" | head -c 80)
+
+  # 4. 运行验证
+  echo "  运行 ci/verify.sh..."
+  VERIFY_OUTPUT=$($VERIFY_CMD 2>&1) && VERIFY_EXIT=0 || VERIFY_EXIT=$?
+
+  # 5. 判定结果
+  if [ "$VERIFY_EXIT" -eq 0 ]; then
+    ELAPSED=$(elapsed_seconds)
+    echo ""
+    echo "$VERIFY_OUTPUT" | tail -5
+    echo ""
+    echo "═══════════════════════════════════════════════════════"
+    echo "  ✓ 验证通过！"
+    echo "═══════════════════════════════════════════════════════"
+    echo ""
+    echo "LOOP_EXIT code=0 reason=verify_pass elapsed=${ELAPSED}s rounds=$i"
+
+    # 记录成功到 STATE.md
+    {
       echo ""
-      echo "🔴 熔断触发：$REASON"
-      _update_state "breaker_triggered" "$ITER" "FAIL" "$REASON"
-      _human_fallback "$REASON"
-      exit 1
-    fi
+      echo "## 第 ${i} 轮 ($(date +%H:%M:%S))"
+      echo "**尝试方向：** ${AGENT_SUMMARY}"
+      echo "**结果：** 通过 ✓"
+      echo "---"
+    } >> "$STATE_FILE"
 
-    echo "  等待 5 秒后重试..."
-    sleep 5
+    exit 0
   fi
+
+  # 验证失败
+  FAIL_LINE=$(echo "$VERIFY_OUTPUT" | grep -E "VERIFY_FAIL|FAIL:" | head -1 || echo "未知错误")
+  CURRENT_STAGE=$(extract_fail_stage "$VERIFY_OUTPUT")
+
+  echo "  ✗ 验证失败: $FAIL_LINE"
+
+  # 6. 追加本轮记录到 STATE.md
+  {
+    echo ""
+    echo "## 第 ${i} 轮 ($(date +%H:%M:%S))"
+    echo "**尝试方向：** ${AGENT_SUMMARY}"
+    echo "**结果：** 失败"
+    echo "**错误摘要：** ${FAIL_LINE}"
+    echo "---"
+  } >> "$STATE_FILE"
+
+  # 7. Strike 计算
+  if [ "$CURRENT_STAGE" = "$LAST_STAGE" ] && [ -n "$LAST_STAGE" ]; then
+    STRIKE_COUNT=$((STRIKE_COUNT + 1))
+  else
+    STRIKE_COUNT=1
+  fi
+
+  PREV_STAGE="$LAST_STAGE"
+  LAST_STAGE="$CURRENT_STAGE"
+
+  # 8. 3-Strike 熔断
+  if [ "$STRIKE_COUNT" -ge "$CONSEC_FAIL_LIMIT" ]; then
+    ELAPSED=$(elapsed_seconds)
+    echo ""
+    echo "═══════════════════════════════════════════════════════"
+    echo "  ✗ 3-Strike 熔断：连续 ${STRIKE_COUNT} 轮在「${CURRENT_STAGE}」失败"
+    echo "  需要人工介入"
+    echo "═══════════════════════════════════════════════════════"
+    echo ""
+    echo "LOOP_EXIT code=1 reason=3-strike_${CURRENT_STAGE} elapsed=${ELAPSED}s rounds=$i"
+    exit 1
+  fi
+
+  CONSEC_FAILS=$((CONSEC_FAILS + 1))
+  echo ""
 done
+
+# ── 达到最大轮数 ──────────────────────────────────────────────────────────────
+
+ELAPSED=$(elapsed_seconds)
+echo ""
+echo "═══════════════════════════════════════════════════════"
+echo "  ✗ 达到最大轮数（$MAX_ITER），未收敛"
+echo "═══════════════════════════════════════════════════════"
+echo ""
+echo "LOOP_EXIT code=1 reason=max_iter elapsed=${ELAPSED}s rounds=$MAX_ITER"
+exit 1

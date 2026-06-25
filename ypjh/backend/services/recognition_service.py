@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
+
+from pydantic import ValidationError
 from pathlib import Path
 from typing import Any, Literal, cast
 
@@ -60,13 +63,6 @@ MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "confidence": 0.0,
         "is_question": False,
     },
-}
-
-MOCK_ANALYSIS: dict = {
-    "explanation": "根据第二象限的三角函数符号规则，sin>0 而 cos<0，代入勾股定理得 cos²θ=1-9/25=16/25，取负值得 cosθ=-4/5。",
-    "knowledge_points": ["三角函数", "第二象限符号", "勾股定理"],
-    "key_examination": "考查三角函数在各象限的符号判断能力",
-    "error_reason": "学生常忽略象限限制，直接取正值，未考虑 cos 在第二象限为负。",
 }
 
 
@@ -143,7 +139,7 @@ class RecognitionService:
             if all(k in raw_analysis for k in required) and isinstance(raw_analysis.get("knowledge_points"), list):
                 analysis = {
                     "explanation": str(raw_analysis["explanation"]),
-                    "knowledge_points": [str(k) for k in raw_analysis["knowledge_points"] if isinstance(k, str)],
+                    "knowledge_points": [str(k) for k in raw_analysis["knowledge_points"]],
                     "key_examination": str(raw_analysis["key_examination"]),
                     "error_reason": str(raw_analysis["error_reason"]),
                 }
@@ -277,7 +273,8 @@ class RecognitionService:
             if inner.analysis is not None:
                 try:
                     analysis_out = AnalysisOut(**inner.analysis)
-                except Exception:
+                except (ValidationError, TypeError) as exc:
+                    logging.warning("AnalysisOut construction failed: %s", exc)
                     analysis_out = None
             candidate_out = QuestionCandidateOut(
                 content=inner.candidate.content,

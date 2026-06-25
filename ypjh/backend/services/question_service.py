@@ -44,6 +44,7 @@ def _to_out(question) -> QuestionOut:
         next_review_at=question.next_review_at,
         created_at=question.created_at,
         updated_at=question.updated_at,
+        analysis=question.analysis,
     )
 
 

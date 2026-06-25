@@ -207,3 +207,36 @@ Task 5: complete (build ✓, frontend restart ✓, backend ✓)
 
 ## Plan COMPLETE
 All 5 tasks done. HEAD: d2f70d9
+
+# SDD Progress Ledger — subject-tags-and-profile
+
+## Plan
+docs/superpowers/plans/2026-06-25-subject-tags-and-profile.md
+
+## Tasks
+- [x] Task 1: Bottom nav → 我的 + /profile route
+- [x] Task 2: Subject tag filter + grouped list
+- [x] Task 3: PATCH /auth/password backend
+- [x] Task 4: ProfilePage full implementation
+
+Task 1: complete (commits 30df55e..90029b4, review clean)
+Task 2: complete (commits 90029b4..07b0c6e, review clean)
+Task 3: complete (commits 07b0c6e..a5c7d28, review clean; minor: inline imports in change_password method + direct ORM query bypasses UserRepository)
+Task 4: complete (commits a5c7d28..7c97d99, review clean; minor fix: dynamic import → static for mockQuestions)
+
+Final review: clean after fix (commit c98a9e4 — cancel button clears password fields)
+
+## subject-tags-and-profile COMPLETE
+All 4 tasks done. HEAD: c98a9e4
+
+# SDD Progress Ledger — ai-analysis
+
+## Plan
+docs/superpowers/plans/2026-06-25-ai-analysis.md
+
+## Tasks
+- [x] Task 1: Backend model + schemas (analysis field)
+- [ ] Task 2: Prompt + recognition service + repository
+- [ ] Task 3: Frontend types + mock + detail page + upload
+
+Task 1: complete (commits dcf7f15..63caaff, review clean)
