@@ -3,24 +3,26 @@ set -uo pipefail
 
 # PreToolUse hook: 机械拦截不可逆操作
 # exit 0 = 放行, exit 2 = BLOCK（Claude Code 原生语义）
+# Claude Code passes tool info via stdin as JSON
 
-INPUT=$(cat 2>/dev/null || true)
+INPUT=$(timeout 1 cat 2>/dev/null || true)
 
 if [[ -z "$INPUT" ]]; then
   exit 0
 fi
 
-# 提取命令内容
+# 仅解析 JSON 格式，非 JSON 直接放行
 CMD=""
-if command -v jq &>/dev/null; then
+if command -v jq &>/dev/null && echo "$INPUT" | jq empty 2>/dev/null; then
   CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null || true)
 fi
+
 if [[ -z "$CMD" ]]; then
-  CMD="$INPUT"
+  exit 0
 fi
 
 # 拦截规则：匹配危险操作
-if echo "$CMD" | grep -qE 'git\s+push|git\s+push\s'; then
+if echo "$CMD" | grep -qE 'git\s+push'; then
   echo "⚠️ BLOCKED: git push 需要人工确认"
   exit 2
 fi

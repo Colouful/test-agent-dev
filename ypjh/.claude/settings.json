@@ -46,7 +46,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /workshop/ypjh/hooks/pre-tool-gate.sh"
+            "command": "bash /workshop/ypjh/hooks/pre-tool-gate.sh",
+            "timeout": 5
           }
         ]
       }
