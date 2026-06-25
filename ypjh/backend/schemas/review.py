@@ -43,3 +43,4 @@ class ReviewStatsOut(BaseModel):
 
     due_count: int
     reviewed_today: int
+    pending_correction_count: int = 0

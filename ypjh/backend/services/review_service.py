@@ -101,4 +101,9 @@ class ReviewService:
         self, session: AsyncSession, user_id: str
     ) -> ReviewStatsOut:
         stats = await _rrepo.get_stats(session, user_id)
-        return ReviewStatsOut(**stats)
+        pending_correction_count = await _rrepo.get_pending_correction_count(session, user_id)
+        return ReviewStatsOut(
+            due_count=stats["due_count"],
+            reviewed_today=stats["reviewed_today"],
+            pending_correction_count=pending_correction_count,
+        )

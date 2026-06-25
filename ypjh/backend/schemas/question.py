@@ -71,3 +71,7 @@ STATUS_FORWARD_ORDER = [
 
 class ErrorTypeUpdate(BaseModel):
     user_error_type: str
+
+
+class LearningStatusUpdate(BaseModel):
+    learning_status: str

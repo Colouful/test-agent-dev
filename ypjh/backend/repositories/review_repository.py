@@ -65,6 +65,16 @@ class ReviewRepository:
         )
         return (await session.execute(stmt)).scalar_one()
 
+    async def get_pending_correction_count(
+        self, session: AsyncSession, user_id: str
+    ) -> int:
+        stmt = select(func.count()).select_from(Question).where(
+            Question.user_id == user_id,
+            Question.learning_status == "待分析",
+            Question.deleted_at.is_(None),
+        )
+        return (await session.execute(stmt)).scalar_one()
+
     async def get_stats(
         self, session: AsyncSession, user_id: str
     ) -> dict[str, int]:

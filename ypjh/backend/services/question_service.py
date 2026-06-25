@@ -148,3 +148,34 @@ class QuestionService:
         result = _to_out(q)
         await session.commit()
         return result
+
+    async def set_learning_status(
+        self,
+        session: AsyncSession,
+        question_id: str,
+        user_id: str,
+        new_status: str,
+    ) -> QuestionOut:
+        from backend.schemas.question import STATUS_FORWARD_ORDER
+        if new_status not in STATUS_FORWARD_ORDER:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"code": "INVALID_STATUS", "message": f"状态必须是: {', '.join(STATUS_FORWARD_ORDER)}"},
+            )
+        q = await _repo.get_by_id(session, question_id, user_id)
+        if q is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "NOT_FOUND", "message": "题目不存在"},
+            )
+        current_idx = STATUS_FORWARD_ORDER.index(q.learning_status) if q.learning_status in STATUS_FORWARD_ORDER else 0
+        target_idx = STATUS_FORWARD_ORDER.index(new_status)
+        if target_idx <= current_idx and new_status != q.learning_status:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": "INVALID_STATUS_TRANSITION", "message": f"状态不能从 {q.learning_status} 退回到 {new_status}"},
+            )
+        q.learning_status = new_status
+        result = _to_out(q)
+        await session.commit()
+        return result

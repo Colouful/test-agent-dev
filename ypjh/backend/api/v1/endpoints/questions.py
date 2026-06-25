@@ -7,6 +7,7 @@ from backend.models.user import User
 from backend.schemas.common import ApiResponse
 from backend.schemas.question import (
     ErrorTypeUpdate,
+    LearningStatusUpdate,
     QuestionCreate,
     QuestionListOut,
     QuestionOut,
@@ -77,4 +78,15 @@ async def set_error_type(
     session: AsyncSession = Depends(get_session),
 ) -> ApiResponse[QuestionOut]:
     result = await _svc.set_error_type(session, question_id, current_user.id, body.user_error_type)
+    return ApiResponse(data=result)
+
+
+@router.patch("/{question_id}/learning-status", response_model=ApiResponse[QuestionOut])
+async def set_learning_status(
+    question_id: str,
+    body: LearningStatusUpdate,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> ApiResponse[QuestionOut]:
+    result = await _svc.set_learning_status(session, question_id, current_user.id, body.learning_status)
     return ApiResponse(data=result)
