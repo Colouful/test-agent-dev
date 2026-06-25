@@ -23,10 +23,10 @@ async function onScore(score: number) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 flex flex-col">
+  <div class="min-h-screen bg-gray-50 flex flex-col pb-20">
     <header class="bg-white border-b sticky top-0 z-10">
       <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-        <RouterLink to="/dashboard" class="text-gray-400">← 返回</RouterLink>
+        <h2 class="font-semibold text-gray-900">每日复习</h2>
         <p class="text-sm text-gray-500">
           {{ store.currentIndex }}/{{ store.queue.length }}
         </p>

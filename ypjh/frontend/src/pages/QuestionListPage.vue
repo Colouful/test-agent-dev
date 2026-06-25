@@ -17,15 +17,13 @@ async function onDelete(id: string) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 pb-20">
     <header class="bg-white border-b sticky top-0 z-10">
       <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <RouterLink to="/dashboard" class="text-gray-400">← 返回</RouterLink>
-          <h2 class="font-semibold text-gray-900">我的错题（{{ store.total }}）</h2>
-        </div>
+        <h2 class="font-semibold text-gray-900">我的错题（{{ store.total }}）</h2>
         <RouterLink to="/upload"
-          class="text-sm bg-primary-500 text-white px-3 py-1.5 rounded-lg hover:bg-primary-600">
+          class="text-sm bg-primary-500 text-white px-3 py-1.5 rounded-lg
+                 hover:bg-primary-600 transition-colors">
           + 录题
         </RouterLink>
       </div>
@@ -47,8 +45,13 @@ async function onDelete(id: string) {
       </template>
 
       <template v-else>
-        <QuestionCard v-for="q in store.items" :key="q.id"
-          :question="q" @delete="onDelete" />
+        <QuestionCard
+          v-for="q in store.items"
+          :key="q.id"
+          :question="q"
+          :show-answer="false"
+          @delete="onDelete"
+        />
       </template>
     </main>
   </div>

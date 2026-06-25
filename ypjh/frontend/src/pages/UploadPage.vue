@@ -39,10 +39,9 @@ async function onConfirm() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 pb-20">
     <header class="bg-white border-b sticky top-0 z-10">
-      <div class="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-        <RouterLink to="/dashboard" class="text-gray-400 hover:text-gray-600">← 返回</RouterLink>
+      <div class="max-w-2xl mx-auto px-4 py-3">
         <h2 class="font-semibold text-gray-900">拍照录题</h2>
       </div>
     </header>
