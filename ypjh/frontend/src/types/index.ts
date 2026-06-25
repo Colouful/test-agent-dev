@@ -66,6 +66,8 @@ export interface Question {
   created_at: string
   updated_at: string
   analysis: Analysis | null
+  learning_status: string
+  user_error_type: string | null
 }
 
 export interface QuestionList {
@@ -111,6 +113,7 @@ export interface ReviewQueue {
 export interface ReviewStats {
   due_count: number
   reviewed_today: number
+  pending_correction_count: number
 }
 
 export interface ApiResponse<T> {

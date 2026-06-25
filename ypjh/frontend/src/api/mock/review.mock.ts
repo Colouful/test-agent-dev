@@ -34,6 +34,6 @@ export const mockReview = {
     }
   },
   async stats(): Promise<ApiResponse<ReviewStats>> {
-    return { data: { due_count: 3, reviewed_today: 7 }, error: null }
+    return { data: { due_count: 3, reviewed_today: 7, pending_correction_count: 2 }, error: null }
   },
 }

@@ -22,4 +22,9 @@ export const questionsApi = {
     form.append('image', file)
     return apiClient.post<ApiResponse<RecognitionResult>>('/v1/questions/recognize', form)
   },
+  setErrorType: (id: string, userErrorType: string) =>
+    apiClient.patch<ApiResponse<Question>>(`/v1/questions/${id}/error-type`, { user_error_type: userErrorType }),
+
+  setLearningStatus: (id: string, learningStatus: string) =>
+    apiClient.patch<ApiResponse<Question>>(`/v1/questions/${id}/learning-status`, { learning_status: learningStatus }),
 }

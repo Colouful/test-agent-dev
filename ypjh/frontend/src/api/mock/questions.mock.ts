@@ -77,6 +77,8 @@ const MOCK_QUESTIONS: Question[] = [
     next_review_at: new Date(Date.now() - 86400000).toISOString(),
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     analysis: MOCK_ANALYSIS_RICH,
+    learning_status: '待订正',
+    user_error_type: '计算错误',
   },
   {
     id: 'q-2', user_id: 'mock-user-1',
@@ -90,6 +92,8 @@ const MOCK_QUESTIONS: Question[] = [
     next_review_at: new Date(Date.now() + 86400000 * 2).toISOString(),
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     analysis: null,
+    learning_status: '待分析',
+    user_error_type: null,
   },
 ]
 
@@ -121,6 +125,8 @@ export const mockQuestions = {
       next_review_at: new Date(Date.now() + 86400000).toISOString(),
       created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
       analysis: data.analysis ?? null,
+      learning_status: data.learning_status ?? '待分析',
+      user_error_type: data.user_error_type ?? null,
     }
     MOCK_QUESTIONS.push(q)
     return { data: q, error: null }
@@ -145,6 +151,21 @@ export const mockQuestions = {
       },
       error: null,
     }
+  },
+  async setErrorType(id: string, errorType: string): Promise<ApiResponse<Question>> {
+    await new Promise(r => setTimeout(r, 200))
+    const q = MOCK_QUESTIONS.find(q => q.id === id)
+    if (!q) return { data: null as unknown as Question, error: { code: 'NOT_FOUND', message: '题目不存在' } }
+    q.user_error_type = errorType
+    if (q.learning_status === '待分析') q.learning_status = '待订正'
+    return { data: { ...q }, error: null }
+  },
+  async setLearningStatus(id: string, status: string): Promise<ApiResponse<Question>> {
+    await new Promise(r => setTimeout(r, 200))
+    const q = MOCK_QUESTIONS.find(q => q.id === id)
+    if (!q) return { data: null as unknown as Question, error: { code: 'NOT_FOUND', message: '题目不存在' } }
+    q.learning_status = status
+    return { data: { ...q }, error: null }
   },
   async softDelete(_id: string): Promise<ApiResponse<null>> {
     await new Promise(r => setTimeout(r, 200))
