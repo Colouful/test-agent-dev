@@ -41,10 +41,33 @@ MOCK_RESPONSES: dict[str, dict[str, Any]] = {
         "subject": "数学",
         "question_type": "fill",
         "analysis": {
-            "explanation": "将 x=3 代入 f(x)=x²+2x+1，得 f(3)=9+6+1=16。",
-            "knowledge_points": ["二次函数求值", "代入法"],
-            "key_examination": "考查函数值的计算能力",
-            "error_reason": "常见错误是漏算某一项或符号出错，应逐项代入后求和。",
+            "solution_summary": "将 x=3 代入 f(x)=x²+2x+1，逐项计算后求和",
+            "solution_steps": [
+                {"step": 1, "title": "代入 x=3", "content": "将 x=3 代入，得 f(3)=3²+2×3+1"},
+                {"step": 2, "title": "逐项计算", "content": "9+6+1=16，所以 f(3)=16"},
+            ],
+            "knowledge_points": {
+                "core": ["二次函数求值", "代入法"],
+                "prerequisite": ["多项式运算"],
+                "related": ["函数定义域", "值域"],
+            },
+            "key_examination": "考查多项式函数代入求值的计算能力",
+            "error_analysis": {
+                "type": "计算错误",
+                "reason": "学生常将 x²+2x+1 中的 x² 误算为 (x+1)²，导致结果偏差",
+                "improvement": ["代入时逐项展开写清楚", "计算后代回原式验证"],
+            },
+            "common_mistakes": [
+                "将 x²+2x+1 直接因式分解为 (x+1)² 后代入，跳过展开步骤",
+                "漏算常数项 +1",
+            ],
+            "practice_questions": [
+                {
+                    "content": "已知 g(x)=x²-4x+3，求 g(5) 的值。",
+                    "answer": "8",
+                    "explanation": "将 x=5 代入：25-20+3=8",
+                }
+            ],
         },
     },
     "blurry": {
@@ -135,14 +158,16 @@ class RecognitionService:
         raw_analysis = raw.pop("analysis", None)
         analysis: dict | None = None
         if isinstance(raw_analysis, dict):
-            required = ("explanation", "knowledge_points", "key_examination", "error_reason")
-            if all(k in raw_analysis for k in required) and isinstance(raw_analysis.get("knowledge_points"), list):
-                analysis = {
-                    "explanation": str(raw_analysis["explanation"]),
-                    "knowledge_points": [str(k) for k in raw_analysis["knowledge_points"]],
-                    "key_examination": str(raw_analysis["key_examination"]),
-                    "error_reason": str(raw_analysis["error_reason"]),
-                }
+            required_new = ("solution_summary", "solution_steps", "knowledge_points",
+                            "key_examination", "error_analysis")
+            if all(k in raw_analysis for k in required_new):
+                try:
+                    from backend.schemas.recognition import AnalysisOut
+                    validated = AnalysisOut.model_validate(raw_analysis)
+                    analysis = validated.model_dump()
+                except Exception as exc:
+                    logging.warning("AnalysisOut validation failed: %s", exc)
+                    analysis = None
 
         # Step 3: R2 — confidence 缺失按 0 处理（不得默认 1.0）
         if "confidence" not in raw:
