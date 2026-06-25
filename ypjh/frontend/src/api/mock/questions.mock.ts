@@ -2,6 +2,67 @@ import type { ApiResponse, Analysis, Question, QuestionList, RecognitionResult }
 
 let _idCounter = 1
 
+const MOCK_ANALYSIS_RICH: Analysis = {
+  solution_summary: '根据第二象限符号规则，sin>0 而 cos<0，用勾股定理求 cos',
+  solution_steps: [
+    { step: 1, title: '确定象限', content: 'θ∈(0,π) 且 sinθ>0，θ 在第一或第二象限' },
+    { step: 2, title: '应用勾股', content: 'cos²θ=1-sin²θ=1-9/25=16/25' },
+    { step: 3, title: '确定符号', content: 'θ 在第二象限，cosθ<0，取负值得 cosθ=-4/5' },
+  ],
+  knowledge_points: {
+    core: ['三角函数', '第二象限符号'],
+    prerequisite: ['勾股定理', '象限定义'],
+    related: ['正弦定理', '余弦定理'],
+  },
+  key_examination: '考查三角函数在各象限的符号判断及勾股定理应用',
+  error_analysis: {
+    type: '条件遗漏',
+    reason: '学生常忽略象限限制，直接取正值，未考虑 cos 在第二象限为负',
+    improvement: ['判断三角函数值先确认角所在象限', '取平方根后根据象限确定正负号'],
+  },
+  common_mistakes: [
+    '只应用勾股定理取正值，忽略象限符号',
+    '将 θ∈(0,π) 理解为第一象限',
+  ],
+  practice_questions: [
+    {
+      content: '已知 cosα=-3/5，α∈(π/2, π)，求 sinα 的值。',
+      answer: 'sinα=4/5',
+      explanation: '第二象限 sin>0，由 sin²α=1-9/25=16/25，取正值得 4/5',
+    },
+  ],
+}
+
+const MOCK_RECOGNIZE_ANALYSIS: Analysis = {
+  solution_summary: '将 x=2 代入 f(x)=2x²-3x+1，逐项计算后求和',
+  solution_steps: [
+    { step: 1, title: '代入 x=2', content: '将 x=2 代入，得 f(2)=2×4-3×2+1' },
+    { step: 2, title: '逐项计算', content: '8-6+1=3，所以 f(2)=3' },
+  ],
+  knowledge_points: {
+    core: ['二次函数求值', '代入法'],
+    prerequisite: ['多项式运算'],
+    related: ['函数定义域'],
+  },
+  key_examination: '考查多项式函数代入求值的计算能力',
+  error_analysis: {
+    type: '计算错误',
+    reason: '常见错误是将 2x² 误算为 (2x)²=4x²，导致结果偏大',
+    improvement: ['代入时逐项展开写清楚', '计算后代回原式验证'],
+  },
+  common_mistakes: [
+    '将 2x² 错误展开为 (2x)²',
+    '漏算常数项',
+  ],
+  practice_questions: [
+    {
+      content: '已知 g(x)=x²-4x+3，求 g(5) 的值。',
+      answer: '8',
+      explanation: '将 x=5 代入：25-20+3=8',
+    },
+  ],
+}
+
 const MOCK_QUESTIONS: Question[] = [
   {
     id: 'q-1', user_id: 'mock-user-1',
@@ -15,12 +76,7 @@ const MOCK_QUESTIONS: Question[] = [
     ease_factor: 2.5, interval_days: 1, review_count: 0,
     next_review_at: new Date(Date.now() - 86400000).toISOString(),
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    analysis: {
-      explanation: '根据第二象限的三角函数符号规则，sin>0 而 cos<0，由勾股定理 cos²θ=1-sin²θ=1-9/25=16/25，取负值得 cosθ=-4/5。',
-      knowledge_points: ['三角函数', '第二象限符号', '勾股定理'],
-      key_examination: '考查三角函数在各象限的符号判断能力',
-      error_reason: '学生常忽略象限限制，直接取正值，未考虑 cos 在第二象限为负。',
-    },
+    analysis: MOCK_ANALYSIS_RICH,
   },
   {
     id: 'q-2', user_id: 'mock-user-1',
@@ -82,12 +138,7 @@ export const mockQuestions = {
           subject: '数学',
           question_type: 'fill',
           image_key: null,
-          analysis: {
-            explanation: '将 x=2 代入 f(x)=2x²-3x+1，得 f(2)=2×4-6+1=3。注意 2x² 展开后系数为 2。',
-            knowledge_points: ['二次函数求值', '代入计算'],
-            key_examination: '考查多项式函数的代入求值能力',
-            error_reason: '常见错误是将 2x² 误算为 (2x)²=4x²，导致结果偏大。',
-          },
+          analysis: MOCK_RECOGNIZE_ANALYSIS,
         },
         error_hint: null,
         error_code: null,

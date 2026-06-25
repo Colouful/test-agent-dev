@@ -1,8 +1,39 @@
-export interface Analysis {
+export interface SolutionStep {
+  step: number
+  title: string
+  content: string
+}
+
+export interface KnowledgePoints {
+  core: string[]
+  prerequisite: string[]
+  related: string[]
+}
+
+export interface ErrorAnalysis {
+  type: string
+  reason: string
+  improvement: string[]
+}
+
+export interface PracticeQuestion {
+  content: string
+  answer: string
   explanation: string
-  knowledge_points: string[]
-  key_examination: string
-  error_reason: string
+}
+
+export interface Analysis {
+  // 新格式字段
+  solution_summary?: string
+  solution_steps?: SolutionStep[]
+  knowledge_points?: KnowledgePoints | string[]
+  key_examination?: string
+  error_analysis?: ErrorAnalysis
+  common_mistakes?: string[]
+  practice_questions?: PracticeQuestion[]
+  // 旧格式兼容字段（已有数据可能含这些 key）
+  explanation?: string
+  error_reason?: string
 }
 
 export interface User {
