@@ -240,3 +240,7 @@ docs/superpowers/plans/2026-06-25-ai-analysis.md
 - [ ] Task 3: Frontend types + mock + detail page + upload
 
 Task 1: complete (commits dcf7f15..63caaff, review clean)
+Task 1: complete (commits f1c949e..348bf35, review clean; minor: QuestionOut defaults are dead code — spec-inherited)
+Task 2: complete (commits 348bf35..1885b34, review clean; minor fix: removed unused imports+helper from test scaffold)
+Task 3: complete (commits 1885b34..481491b, review clean after fix — added cross-user+idempotent tests, moved import to module top)
+Task 4: complete (commit b9ca644, review clean)
