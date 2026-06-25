@@ -46,6 +46,8 @@ class QuestionOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     analysis: dict | None = None
+    learning_status: str = "待分析"
+    user_error_type: str | None = None
 
     model_config = {"from_attributes": True}
 

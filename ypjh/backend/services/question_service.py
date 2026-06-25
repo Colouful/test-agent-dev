@@ -45,6 +45,8 @@ def _to_out(question) -> QuestionOut:
         created_at=question.created_at,
         updated_at=question.updated_at,
         analysis=question.analysis,
+        learning_status=question.learning_status,
+        user_error_type=question.user_error_type,
     )
 
 

@@ -32,3 +32,5 @@ class Question(Base):
         server_default=func.now(), onupdate=func.now()
     )
     deleted_at: Mapped[datetime | None] = mapped_column(default=None)
+    learning_status: Mapped[str] = mapped_column(default="待分析")
+    user_error_type: Mapped[str | None] = mapped_column(default=None)
