@@ -38,9 +38,10 @@ const selectedErrorType = ref('')
 
 const isNewQuestion = computed(() => route.query.new === '1')
 const showErrorTypeGuide = computed(() =>
-  isNewQuestion.value &&
-  showErrorBanner.value &&
-  question.value?.learning_status === '待分析'
+  showErrorBanner.value && (
+    question.value?.learning_status === '待分析' ||
+    (question.value?.learning_status === '待订正' && !question.value?.user_error_type)
+  )
 )
 
 const ERROR_TYPES = [
@@ -157,6 +158,10 @@ const TYPE_LABELS: Record<string, string> = {
           <span v-if="question.question_type && TYPE_LABELS[question.question_type]"
             class="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 font-medium">
             {{ TYPE_LABELS[question.question_type] }}
+          </span>
+          <span v-if="question.learning_status"
+            class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+            {{ question.learning_status }}
           </span>
           <span :class="[
             'text-xs px-2 py-0.5 rounded-full font-medium',
@@ -406,7 +411,7 @@ const TYPE_LABELS: Record<string, string> = {
     </main>
 
     <!-- 底部操作栏（随学习状态变化） -->
-    <div v-if="question && (question.learning_status === '待订正' || question.learning_status === '待巩固')"
+    <div v-if="question && (question.learning_status === '待订正' || question.learning_status === '待巩固' || question.learning_status === '待复习')"
       class="fixed bottom-16 left-0 right-0 z-20 px-4 pb-2 max-w-2xl mx-auto">
       <button
         v-if="question.learning_status === '待订正'"
@@ -414,7 +419,7 @@ const TYPE_LABELS: Record<string, string> = {
         :disabled="submittingStatus"
         class="w-full py-3.5 bg-blue-500 text-white rounded-xl font-semibold text-sm
                hover:bg-blue-600 disabled:opacity-50 transition-colors shadow-lg">
-        {{ submittingStatus ? '更新中…' : '✓ 我已理解，进入复习' }}
+        {{ submittingStatus ? '更新中…' : '✓ 标记已订正' }}
       </button>
       <button
         v-else-if="question.learning_status === '待巩固'"
@@ -422,7 +427,15 @@ const TYPE_LABELS: Record<string, string> = {
         :disabled="submittingStatus"
         class="w-full py-3.5 bg-purple-500 text-white rounded-xl font-semibold text-sm
                hover:bg-purple-600 disabled:opacity-50 transition-colors shadow-lg">
-        {{ submittingStatus ? '更新中…' : '📚 加入今日复习' }}
+        {{ submittingStatus ? '更新中…' : '📚 复习完成' }}
+      </button>
+      <button
+        v-else-if="question.learning_status === '待复习'"
+        @click="advanceStatus('基本掌握')"
+        :disabled="submittingStatus"
+        class="w-full py-3.5 bg-green-500 text-white rounded-xl font-semibold text-sm
+               hover:bg-green-600 disabled:opacity-50 transition-colors shadow-lg">
+        {{ submittingStatus ? '更新中…' : '✓ 复习完成' }}
       </button>
     </div>
   </div>
