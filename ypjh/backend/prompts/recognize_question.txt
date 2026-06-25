@@ -11,17 +11,40 @@
   "has_figure": true或false（是否含几何图/电路图/表格等图形化内容）,
   "is_question": true或false（图片是否包含题目内容）,
   "analysis": {
-    "explanation": "详细解题过程和答案解析，2-4句，针对 correct_answer 展开",
-    "knowledge_points": ["涉及的核心知识点，1-3个，每个不超过10字"],
-    "key_examination": "这道题核心考查的能力或概念，1句话",
-    "error_reason": "学生做错这类题的典型原因，1-2句"
+    "solution_summary": "一句话解题思路，不超过30字",
+    "solution_steps": [
+      { "step": 1, "title": "步骤标题（5字以内）", "content": "具体推导过程，1-2句" },
+      { "step": 2, "title": "步骤标题", "content": "推导过程" }
+    ],
+    "knowledge_points": {
+      "core": ["本题直接考查的知识点，1-2个，每个不超过12字"],
+      "prerequisite": ["解题前置知识，0-3个，每个不超过12字"],
+      "related": ["可延伸的关联知识，0-3个，每个不超过12字"]
+    },
+    "key_examination": "本题核心考查的能力或概念，1句话",
+    "error_analysis": {
+      "type": "错误类型（知识缺失/概念混淆/条件遗漏/计算错误/解题方法错误 之一）",
+      "reason": "学生出错的具体原因，1-2句",
+      "improvement": ["具体可执行的改进建议，1-3条"]
+    },
+    "common_mistakes": ["该类题学生常见错误，1-2条"],
+    "practice_questions": [
+      {
+        "content": "同类练习题题目内容",
+        "answer": "答案",
+        "explanation": "简短解析，1-2句"
+      }
+    ]
   }
 }
 
 注意：
 1. content 只包含印刷体题目，手写内容统一放入 wrong_answer
 2. 数学公式保留 LaTeX 格式，如 $\frac{1}{2}$
-3. 如果图片不是题目（风景/自拍等），is_question 设为 false，其他字段可为 null，analysis 整体设为 null
+3. 如果图片不是题目（风景/自拍等），is_question 设为 false，analysis 整体设为 null
 4. confidence 反映你对识别结果的把握程度
 5. 如果图片模糊无法分析，analysis 整体设为 null
-6. knowledge_points 必须是字符串数组，不能是单个字符串
+6. solution_steps 至少 1 步，不超过 5 步
+7. knowledge_points 各数组可为空数组 []，但不能省略 core/prerequisite/related 三个 key
+8. error_analysis.type 必须是：知识缺失、概念混淆、条件遗漏、计算错误、解题方法错误 之一
+9. practice_questions 生成 1 道同类练习题

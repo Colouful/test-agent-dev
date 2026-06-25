@@ -5,11 +5,38 @@ from typing import Literal
 from pydantic import BaseModel
 
 
-class AnalysisOut(BaseModel):
+class SolutionStep(BaseModel):
+    step: int
+    title: str
+    content: str
+
+
+class KnowledgePoints(BaseModel):
+    core: list[str] = []
+    prerequisite: list[str] = []
+    related: list[str] = []
+
+
+class ErrorAnalysis(BaseModel):
+    type: str
+    reason: str
+    improvement: list[str] = []
+
+
+class PracticeQuestion(BaseModel):
+    content: str
+    answer: str
     explanation: str
-    knowledge_points: list[str]
+
+
+class AnalysisOut(BaseModel):
+    solution_summary: str
+    solution_steps: list[SolutionStep]
+    knowledge_points: KnowledgePoints
     key_examination: str
-    error_reason: str
+    error_analysis: ErrorAnalysis
+    common_mistakes: list[str] = []
+    practice_questions: list[PracticeQuestion] = []
 
 
 class QuestionCandidateOut(BaseModel):
