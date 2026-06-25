@@ -5,7 +5,7 @@ import { useKatex } from '@/composables/useKatex'
 import { useReview } from '@/composables/useReview'
 import ReviewScoreButtons from '@/components/ReviewScoreButtons.vue'
 
-const { store, submitting, fetchQueue, submitScore } = useReview()
+const { store, submitting, loading, fetchQueue, submitScore } = useReview()
 const showAnswer = ref(false)
 const container = ref<HTMLElement | null>(null)
 useKatex(container)
@@ -43,6 +43,12 @@ async function onScore(score: number) {
           class="bg-primary-500 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-primary-600">
           返回首页
         </RouterLink>
+      </div>
+
+      <!-- 加载中 -->
+      <div v-else-if="loading"
+        class="flex-1 flex items-center justify-center text-gray-300 text-sm">
+        加载中…
       </div>
 
       <!-- 无待复习 -->

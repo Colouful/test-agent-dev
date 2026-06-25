@@ -10,6 +10,7 @@ export function useReview() {
 
   async function fetchQueue() {
     loading.value = true
+    store.reset()
     try {
       const resp = IS_MOCK
         ? await mockReview.queue()

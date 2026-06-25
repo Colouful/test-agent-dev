@@ -48,7 +48,7 @@ function goToDetail() {
 
     <div v-if="question.image_url" class="mb-3">
       <img :src="question.image_url" alt="题目图片"
-        class="max-w-full rounded-lg border border-gray-100" loading="lazy">
+        class="w-full h-36 object-cover rounded-lg border border-gray-100" loading="lazy">
     </div>
 
     <p class="font-serif text-gray-800 text-base leading-relaxed mb-3 whitespace-pre-wrap line-clamp-3">
