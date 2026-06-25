@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import func
+from sqlalchemy import JSON, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.models.base import Base
@@ -26,6 +26,7 @@ class Question(Base):
     interval_days: Mapped[int] = mapped_column(default=1)
     next_review_at: Mapped[datetime | None] = mapped_column(default=None)
     last_reviewed_at: Mapped[datetime | None] = mapped_column(default=None)
+    analysis: Mapped[dict | None] = mapped_column(JSON, default=None)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), onupdate=func.now()

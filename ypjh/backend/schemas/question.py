@@ -13,6 +13,7 @@ class QuestionCreate(BaseModel):
     image_key: str | None = None
     confidence: float | None = None
     original_filename: str | None = None
+    analysis: dict | None = None
 
 
 class QuestionUpdate(BaseModel):
@@ -44,6 +45,7 @@ class QuestionOut(BaseModel):
     next_review_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    analysis: dict | None = None
 
     model_config = {"from_attributes": True}
 
