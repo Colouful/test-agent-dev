@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.database import get_session
 from backend.core.security import get_current_user
 from backend.models.user import User
-from backend.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse
+from backend.schemas.auth import AuthResponse, ChangePasswordRequest, LoginRequest, RegisterRequest, UserResponse
 from backend.schemas.common import ApiResponse
 from backend.services.auth_service import AuthService
 
@@ -37,3 +37,15 @@ async def me(
     return ApiResponse(
         data=UserResponse(id=current_user.id, email=current_user.email)
     )
+
+
+@router.patch("/password", response_model=ApiResponse[dict])
+async def change_password(
+    body: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> ApiResponse[dict]:
+    result = await _svc.change_password(
+        session, current_user.id, body.old_password, body.new_password
+    )
+    return ApiResponse(data=result)

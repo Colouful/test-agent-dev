@@ -29,3 +29,15 @@ class AuthResponse(BaseModel):
 class UserResponse(BaseModel):
     id: str
     email: str
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def new_password_min_length(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("新密码至少需要 8 个字符")
+        return v
