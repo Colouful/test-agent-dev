@@ -24,8 +24,11 @@ onMounted(fetchStats)
       <div class="bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl p-6 text-white shadow-md">
         <p class="text-sm opacity-80 mb-1">今日待复习</p>
         <p class="text-5xl font-bold mb-4">{{ reviewStore.stats.due_count }}</p>
-        <div class="flex items-center gap-4 text-sm opacity-80">
+        <div class="flex items-center gap-4 text-sm opacity-80 flex-wrap">
           <span>今日已完成 <strong class="opacity-100">{{ reviewStore.stats.reviewed_today }}</strong> 题</span>
+          <span v-if="reviewStore.stats.pending_correction_count > 0">
+            待订正 <strong class="opacity-100 text-yellow-200">{{ reviewStore.stats.pending_correction_count }}</strong> 题
+          </span>
         </div>
         <RouterLink v-if="reviewStore.stats.due_count > 0" to="/review"
           class="mt-5 inline-flex items-center gap-1 bg-white text-primary-600 px-5 py-2.5

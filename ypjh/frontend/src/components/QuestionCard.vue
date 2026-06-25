@@ -26,7 +26,7 @@ function goToDetail() {
            active:scale-[0.98]"
   >
     <div class="flex items-center justify-between mb-3">
-      <div class="flex gap-2">
+      <div class="flex gap-2 flex-wrap">
         <span v-if="question.subject"
           class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">
           {{ question.subject }}
@@ -38,12 +38,24 @@ function goToDetail() {
           {{ question.status === 'confirmed' ? '已确认' : '待确认' }}
         </span>
       </div>
-      <button
-        @click.stop="$emit('delete', question.id)"
-        class="text-gray-300 hover:text-red-400 transition-colors text-xs px-2 py-1 -mr-1"
-      >
-        删除
-      </button>
+      <div class="flex items-center gap-2">
+        <!-- 学习状态角标 -->
+        <span v-if="question.learning_status === '已掌握'" class="text-green-500 text-xs font-bold">✓</span>
+        <span v-else-if="question.learning_status" :class="[
+          'w-2 h-2 rounded-full shrink-0',
+          question.learning_status === '待分析' ? 'bg-gray-300' :
+          question.learning_status === '待订正' ? 'bg-orange-400' :
+          question.learning_status === '待巩固' ? 'bg-blue-400' :
+          question.learning_status === '待复习' ? 'bg-purple-400' :
+          question.learning_status === '基本掌握' ? 'bg-green-400' : 'bg-gray-200'
+        ]" :title="question.learning_status" />
+        <button
+          @click.stop="$emit('delete', question.id)"
+          class="text-gray-300 hover:text-red-400 transition-colors text-xs px-2 py-1 -mr-1"
+        >
+          删除
+        </button>
+      </div>
     </div>
 
     <div v-if="question.image_url" class="mb-3">
