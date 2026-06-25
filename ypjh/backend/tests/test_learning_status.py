@@ -6,10 +6,6 @@ os.environ["MOCK_BEDROCK"] = "true"
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.services.question_service import QuestionService
 from backend.schemas.question import QuestionCreate
-from httpx import AsyncClient
-from backend.core.security import get_current_user
-from backend.models.user import User
-from unittest.mock import AsyncMock
 
 
 @pytest.mark.asyncio
@@ -26,13 +22,6 @@ async def test_learning_status_returned_in_list(session: AsyncSession):
     await svc.create(session, "u1", QuestionCreate(content="题目", correct_answer="答案"))
     result = await svc.get_list(session, "u1")
     assert result.items[0].learning_status == "待分析"
-
-
-def _mock_user(uid: str):
-    user = User()
-    user.id = uid
-    user.email = f"{uid}@test.com"
-    return user
 
 
 @pytest.mark.asyncio
