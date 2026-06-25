@@ -37,6 +37,7 @@ class ReviewService:
             items.append(ReviewQueueItemOut(
                 id=q.id,
                 content=q.content,
+                correct_answer=q.correct_answer,
                 subject=q.subject,
                 question_type=q.question_type,
                 image_url=image_url,

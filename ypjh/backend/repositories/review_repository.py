@@ -14,7 +14,7 @@ class ReviewRepository:
     async def get_due_questions(
         self, session: AsyncSession, user_id: str, limit: int = 20
     ) -> list[Question]:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).isoformat()  # ISO string with +00:00, matches DB storage
         stmt = (
             select(Question)
             .where(
@@ -57,7 +57,7 @@ class ReviewRepository:
     async def get_due_count(
         self, session: AsyncSession, user_id: str
     ) -> int:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).isoformat()
         stmt = select(func.count()).select_from(Question).where(
             Question.user_id == user_id,
             Question.deleted_at.is_(None),
@@ -70,9 +70,9 @@ class ReviewRepository:
     ) -> dict[str, int]:
         due_count = await self.get_due_count(session, user_id)
 
-        now = datetime.now(timezone.utc)
+        now_dt = datetime.now(timezone.utc)
         # 今日已复习
-        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = now_dt.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
         reviewed_stmt = select(func.count()).select_from(ReviewLog).where(
             ReviewLog.user_id == user_id,
             ReviewLog.reviewed_at >= today_start,

@@ -162,12 +162,45 @@ class RecognitionService:
         """调用 Bedrock 视觉模型，返回原始 dict。"""
         if MOCK_BEDROCK:
             return dict(MOCK_RESPONSES.get(self.mock_scenario, MOCK_RESPONSES["clear"]))
-        # R24: prompt 必须从文件加载，不得硬编码
+
+        # R24: prompt 必须从文件加载
         from backend.core.image_utils import PROMPT_PATH
-        raise NotImplementedError(
-            f"真实 Bedrock 调用未实现，设置 MOCK_BEDROCK=true 使用 mock。"
-            f"实现时需从 {PROMPT_PATH} 加载系统 Prompt（R24）。"
+        from backend.core.s3_client import get_image_bytes
+        import base64
+        import json
+        import boto3  # type: ignore[import-untyped]
+
+        system_prompt = Path(PROMPT_PATH).read_text(encoding="utf-8")
+        image_data = get_image_bytes(image_key)
+        image_b64 = base64.standard_b64encode(image_data).decode()
+
+        # 根据 key 后缀决定 media_type
+        ext = image_key.rsplit(".", 1)[-1].lower()
+        media_type_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "heic": "image/jpeg"}
+        media_type = media_type_map.get(ext, "image/jpeg")
+
+        client = boto3.client("bedrock-runtime", region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
+
+        response = client.converse(
+            modelId="global.anthropic.claude-haiku-4-5-20251001-v1:0",
+            system=[{"text": system_prompt}],
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"image": {"format": media_type.split("/")[1], "source": {"bytes": image_data}}},
+                    {"text": "请识别这道题目，严格按指定 JSON 格式返回。"},
+                ],
+            }],
+            inferenceConfig={"maxTokens": 1024, "temperature": 0.0},
         )
+
+        text = response["output"]["message"]["content"][0]["text"].strip()
+        # 提取 JSON（模型有时会包裹在 ```json ... ``` 中）
+        if "```" in text:
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        return cast(dict[str, Any], json.loads(text))
 
     def recognize_upload(
         self,

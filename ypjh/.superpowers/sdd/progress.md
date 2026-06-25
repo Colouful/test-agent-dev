@@ -199,3 +199,11 @@ Task 3: complete (commits 34a732a..bc62ca6, review clean)
 
 ## Plan 7 COMPLETE
 All 3 tasks done. 75 backend tests passing. TypeScript type-check clean. HEAD: bc62ca6
+Task 1: complete (commits 84837bc..6b8c805, review clean; indicator fix inline)
+Task 2: complete (commits 6b8c805..fd7c7f9, review clean)
+Task 3: complete (commits fd7c7f9..c8784a2, review clean)
+Task 4: complete (commits c8784a2..5517249, review clean)
+Task 5: complete (build ✓, frontend restart ✓, backend ✓)
+
+## Plan COMPLETE
+All 5 tasks done. HEAD: d2f70d9

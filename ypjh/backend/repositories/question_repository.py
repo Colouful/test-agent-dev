@@ -29,6 +29,7 @@ class QuestionRepository:
             ease_factor=2.5,
             interval_days=1,
             review_count=0,
+            next_review_at=datetime.utcnow(),  # naive UTC，立即可复习
         )
         session.add(q)
         await session.flush()
