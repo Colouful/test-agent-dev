@@ -25,7 +25,7 @@ function isActive(to: string) {
         v-for="tab in tabs"
         :key="tab.to"
         :to="tab.to"
-        class="flex-1 flex flex-col items-center justify-center py-2 min-h-[56px]
+        class="flex-1 relative flex flex-col items-center justify-center py-2 min-h-[56px]
                transition-colors select-none"
         :class="isActive(tab.to)
           ? 'text-primary-600'
@@ -35,7 +35,7 @@ function isActive(to: string) {
         <span class="text-[10px] font-medium leading-none">{{ tab.label }}</span>
         <span
           v-if="isActive(tab.to)"
-          class="relative bottom-0 w-8 h-0.5 bg-primary-500 rounded-t-full"
+          class="absolute bottom-0 w-8 h-0.5 bg-primary-500 rounded-t-full"
         />
       </RouterLink>
     </div>
