@@ -245,7 +245,7 @@ class RecognitionService:
                     {"text": "请识别这道题目，严格按指定 JSON 格式返回。"},
                 ],
             }],
-            inferenceConfig={"maxTokens": 1024, "temperature": 0.0},
+            inferenceConfig={"maxTokens": 3000, "temperature": 0.0},
         )
 
         text = response["output"]["message"]["content"][0]["text"].strip()
