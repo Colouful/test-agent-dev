@@ -18,8 +18,8 @@ function isActive(to: string) {
 </script>
 
 <template>
-  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200
-              safe-area-inset-bottom">
+  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200"
+       style="padding-bottom: env(safe-area-inset-bottom, 0px)">
     <div class="max-w-2xl mx-auto flex">
       <RouterLink
         v-for="tab in tabs"

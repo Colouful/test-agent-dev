@@ -16,7 +16,11 @@ onMounted(async () => {
     const id = route.params.id as string
     if (IS_MOCK) {
       const resp = await mockQuestions.get(id)
-      question.value = resp.data
+      if (resp.error) {
+        error.value = resp.error.message || '题目不存在'
+      } else {
+        question.value = resp.data
+      }
     } else {
       const resp = await questionsApi.get(id)
       question.value = resp.data.data
